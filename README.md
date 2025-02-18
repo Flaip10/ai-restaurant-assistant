@@ -22,6 +22,7 @@ AI-powered voice assistant that allows users to **call a number, speak with an A
 
 ## Project Structure
 
+```
 ai-restaurant-assistant/
 ├── backend/ # FastAPI/Express + GraphQL + PostgreSQL
 ├── frontend/ # React (Next.js) dashboard
@@ -31,6 +32,7 @@ ai-restaurant-assistant/
 ├── scripts/ # Automation scripts
 ├── README.md # Project documentation
 ├── .github/ # CI/CD Workflows
+```
 
 ## Setup Instructions
 

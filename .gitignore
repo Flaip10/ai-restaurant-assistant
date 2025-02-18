@@ -20,3 +20,16 @@ llm/llama.cpp/*.gguf
 # Ignore log files
 llm/llama.cpp/*.log
 llm/llama.cpp/*.tmp
+
+# NestJS build artifacts
+/backend/dist
+/backend/node_modules
+/backend/*.log
+
+# Temporary NestJS files
+/backend/tmp
+/backend/.env
+
+# Ignore NestJS compiled output
+/backend/*.tsbuildinfo
+

@@ -3,3 +3,20 @@ venv/
 .env
 __pycache__/
 db.sqlite3
+
+# Ignore build artifacts from Llama.cpp
+llm/llama.cpp/build/
+llm/llama.cpp/bin/
+llm/llama.cpp/CMakeCache.txt
+llm/llama.cpp/CMakeFiles/
+llm/llama.cpp/Makefile
+llm/llama.cpp/*.so
+llm/llama.cpp/*.o
+
+# Ignore downloaded models (do not track large files)
+llm/llama.cpp/models/
+llm/llama.cpp/*.gguf
+
+# Ignore log files
+llm/llama.cpp/*.log
+llm/llama.cpp/*.tmp

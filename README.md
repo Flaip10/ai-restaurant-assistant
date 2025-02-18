@@ -22,7 +22,7 @@ AI-powered voice assistant that allows users to **call a number, speak with an A
 
 ## Project Structure
 
-```
+```bash
 ai-restaurant-assistant/
 ├── backend/ # FastAPI/Express + GraphQL + PostgreSQL
 ├── frontend/ # React (Next.js) dashboard

@@ -28,9 +28,11 @@ type Query {
 type Mutation {
   """Create a new reservation"""
   createReservation(data: CreateReservationInput!): Reservation!
+
+  """Cancel a reservation by ID"""
+  cancelReservation(id: Int!): Boolean!
 }
 
-"""Data required to create a new reservation"""
 input CreateReservationInput {
   """Name of the person making the reservation"""
   name: String!

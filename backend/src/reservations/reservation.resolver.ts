@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reservation } from './reservation.entity';
@@ -24,5 +24,13 @@ export class ReservationResolver {
   ): Promise<Reservation> {
     const newReservation = this.reservationRepo.create(data);
     return await this.reservationRepo.save(newReservation);
+  }
+
+  @Mutation(() => Boolean, { description: 'Cancel a reservation by ID' })
+  async cancelReservation(
+    @Args('id', { type: () => Int }) id: number,
+  ): Promise<boolean> {
+    const result = await this.reservationRepo.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 }

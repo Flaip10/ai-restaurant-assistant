@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { Reservation } from './reservation.entity';
 import { CreateReservationInput } from './dto/create-reservation.input';
 import { UpdateReservationInput } from './dto/update-reservation.input';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -16,23 +20,38 @@ export class ReservationResolver {
     description: 'Get all reservations from the database',
   })
   async getReservations() {
-    return this.reservationRepo.find();
+    try {
+      return await this.reservationRepo.find();
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch reservations');
+    }
   }
 
   @Mutation(() => Reservation, { description: 'Create a new reservation' })
   async createReservation(
     @Args('data') data: CreateReservationInput,
   ): Promise<Reservation> {
-    const newReservation = this.reservationRepo.create(data);
-    return await this.reservationRepo.save(newReservation);
+    try {
+      const newReservation = this.reservationRepo.create(data);
+      return await this.reservationRepo.save(newReservation);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to create reservation');
+    }
   }
 
   @Mutation(() => Boolean, { description: 'Cancel a reservation by ID' })
   async cancelReservation(
     @Args('id', { type: () => Int }) id: number,
   ): Promise<boolean> {
-    const result = await this.reservationRepo.delete(id);
-    return (result.affected ?? 0) > 0;
+    try {
+      const result = await this.reservationRepo.delete(id);
+      if ((result.affected ?? 0) === 0) {
+        throw new NotFoundException(`Reservation with ID ${id} not found`);
+      }
+      return true;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to cancel reservation');
+    }
   }
 
   @Mutation(() => Reservation, {
@@ -41,15 +60,19 @@ export class ReservationResolver {
   async updateReservation(
     @Args('data') data: UpdateReservationInput,
   ): Promise<Reservation> {
-    const reservation = await this.reservationRepo.findOne({
-      where: { id: data.id },
-    });
+    try {
+      const reservation = await this.reservationRepo.findOne({
+        where: { id: data.id },
+      });
 
-    if (!reservation) {
-      throw new Error('Reservation not found');
+      if (!reservation) {
+        throw new NotFoundException(`Reservation with ID ${data.id} not found`);
+      }
+
+      Object.assign(reservation, data);
+      return await this.reservationRepo.save(reservation);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to update reservation');
     }
-
-    Object.assign(reservation, data);
-    return await this.reservationRepo.save(reservation);
   }
 }

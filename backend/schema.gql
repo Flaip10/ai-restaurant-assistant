@@ -26,13 +26,23 @@ type Reservation {
 
 type Query {
   """Get all reservations from the database"""
-  getReservations(filter: ReservationFilterInput): [Reservation!]!
+  getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): [Reservation!]!
 }
 
 input ReservationFilterInput {
   userName: String
   date: String
   guests: Int
+}
+
+input PaginationInput {
+  page: Int = 1
+  limit: Int = 10
+}
+
+input SortInput {
+  sortBy: String
+  order: String = "ASC"
 }
 
 type Mutation {

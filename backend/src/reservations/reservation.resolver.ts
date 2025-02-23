@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
 import { ReservationFilterInput } from './dto/get-reservation.input';
+import { PaginationInput } from './dto/pagination.input';
+import { SortInput } from './dto/sort.input';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -26,25 +28,40 @@ export class ReservationResolver {
   async getReservations(
     @Args('filter', { type: () => ReservationFilterInput, nullable: true })
     filter?: ReservationFilterInput,
+    @Args('pagination', { type: () => PaginationInput, nullable: true })
+    pagination?: PaginationInput,
+    @Args('sort', { type: () => SortInput, nullable: true }) sort?: SortInput,
   ): Promise<Reservation[]> {
     try {
       const query = this.reservationRepo
         .createQueryBuilder('reservation')
         .leftJoinAndSelect('reservation.user', 'user');
 
+      // Apply Filters
       if (filter?.userName) {
         query.andWhere('user.name = :userName', { userName: filter.userName });
       }
-
       if (filter?.date) {
         query.andWhere('reservation.date = :date', { date: filter.date });
       }
-
       if (filter?.guests) {
         query.andWhere('reservation.guests = :guests', {
           guests: filter.guests,
         });
       }
+
+      // Apply Sorting
+      if (sort?.sortBy) {
+        query.orderBy(
+          `reservation.${sort.sortBy}`,
+          sort.order === 'DESC' ? 'DESC' : 'ASC',
+        );
+      }
+
+      // Apply Pagination
+      const page = pagination?.page ?? 1;
+      const limit = pagination?.limit ?? 10;
+      query.skip((page - 1) * limit).take(limit);
 
       return query.getMany();
     } catch (error) {

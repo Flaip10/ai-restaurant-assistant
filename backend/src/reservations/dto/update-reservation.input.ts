@@ -6,5 +6,5 @@ export class UpdateReservationInput extends PartialType(
   CreateReservationInput,
 ) {
   @Field(() => Int, { description: 'ID of the reservation to update' })
-  id: number;
+  id!: number;
 }

@@ -2,15 +2,16 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type User {
+  id: Float!
+  name: String!
+  reservations: [Reservation!]
+}
+
 """A reservation in the system"""
 type Reservation {
   """Unique ID of the reservation"""
   id: Float!
-
-  """Name of the person making the reservation"""
-  name: String!
-
-  """Date of the reservation (YYYY-MM-DD)"""
   date: String!
 
   """Time of the reservation (HH:MM)"""
@@ -18,6 +19,9 @@ type Reservation {
 
   """Number of guests for the reservation"""
   guests: Float!
+
+  """User who made the reservation"""
+  user: User!
 }
 
 type Query {
@@ -37,8 +41,8 @@ type Mutation {
 }
 
 input CreateReservationInput {
-  """Name of the person making the reservation"""
-  name: String!
+  """Name of the user making the reservation"""
+  userName: String!
 
   """Date of the reservation (YYYY-MM-DD)"""
   date: String!
@@ -51,8 +55,8 @@ input CreateReservationInput {
 }
 
 input UpdateReservationInput {
-  """Name of the person making the reservation"""
-  name: String
+  """Name of the user making the reservation"""
+  userName: String
 
   """Date of the reservation (YYYY-MM-DD)"""
   date: String

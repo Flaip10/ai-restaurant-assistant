@@ -8,12 +8,15 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { User } from 'src/users/user.entity';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
   constructor(
     @InjectRepository(Reservation)
     private reservationRepo: Repository<Reservation>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
   ) {}
 
   @Query(() => [Reservation], {
@@ -32,7 +35,16 @@ export class ReservationResolver {
     @Args('data') data: CreateReservationInput,
   ): Promise<Reservation> {
     try {
-      const newReservation = this.reservationRepo.create(data);
+      let user = await this.userRepo.findOne({
+        where: { name: data.userName },
+      });
+
+      if (!user) {
+        user = this.userRepo.create({ name: data.userName });
+        await this.userRepo.save(user);
+      }
+
+      const newReservation = this.reservationRepo.create({ ...data, user });
       return await this.reservationRepo.save(newReservation);
     } catch (error) {
       throw new InternalServerErrorException('Failed to create reservation');

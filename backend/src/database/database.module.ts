@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { Reservation } from 'src/reservations/reservation.entity';
+import { User } from 'src/users/user.entity';
 
 @Module({
   imports: [
@@ -16,7 +18,7 @@ import { Reservation } from 'src/reservations/reservation.entity';
       autoLoadEntities: true,
       synchronize: true, // Auto-create tables (disable in production)
     }),
-    TypeOrmModule.forFeature([Reservation]),
+    TypeOrmModule.forFeature([Reservation, User]),
   ],
   exports: [TypeOrmModule],
 })

@@ -1,5 +1,5 @@
 import { ObjectType, Field } from '@nestjs/graphql';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
 @ObjectType({ description: 'A reservation in the system' }) // Add class-level description
 @Entity()
@@ -12,8 +12,9 @@ export class Reservation {
   @Column()
   name: string;
 
-  @Field({ description: 'Date of the reservation (YYYY-MM-DD)' })
+  @Field()
   @Column()
+  @Index() // Improves search performance for reservations by date
   date: string;
 
   @Field({ description: 'Time of the reservation (HH:MM)' })

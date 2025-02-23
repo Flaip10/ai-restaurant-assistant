@@ -9,6 +9,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
+import { ReservationFilterInput } from './dto/get-reservation.input';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -22,9 +23,30 @@ export class ReservationResolver {
   @Query(() => [Reservation], {
     description: 'Get all reservations from the database',
   })
-  async getReservations() {
+  async getReservations(
+    @Args('filter', { type: () => ReservationFilterInput, nullable: true })
+    filter?: ReservationFilterInput,
+  ): Promise<Reservation[]> {
     try {
-      return await this.reservationRepo.find();
+      const query = this.reservationRepo
+        .createQueryBuilder('reservation')
+        .leftJoinAndSelect('reservation.user', 'user');
+
+      if (filter?.userName) {
+        query.andWhere('user.name = :userName', { userName: filter.userName });
+      }
+
+      if (filter?.date) {
+        query.andWhere('reservation.date = :date', { date: filter.date });
+      }
+
+      if (filter?.guests) {
+        query.andWhere('reservation.guests = :guests', {
+          guests: filter.guests,
+        });
+      }
+
+      return query.getMany();
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch reservations');
     }

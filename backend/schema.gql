@@ -26,7 +26,13 @@ type Reservation {
 
 type Query {
   """Get all reservations from the database"""
-  getReservations: [Reservation!]!
+  getReservations(filter: ReservationFilterInput): [Reservation!]!
+}
+
+input ReservationFilterInput {
+  userName: String
+  date: String
+  guests: Int
 }
 
 type Mutation {

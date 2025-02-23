@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reservation } from './reservation.entity';
 import { CreateReservationInput } from './dto/create-reservation.input';
+import { UpdateReservationInput } from './dto/update-reservation.input';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -32,5 +33,23 @@ export class ReservationResolver {
   ): Promise<boolean> {
     const result = await this.reservationRepo.delete(id);
     return (result.affected ?? 0) > 0;
+  }
+
+  @Mutation(() => Reservation, {
+    description: 'Update an existing reservation',
+  })
+  async updateReservation(
+    @Args('data') data: UpdateReservationInput,
+  ): Promise<Reservation> {
+    const reservation = await this.reservationRepo.findOne({
+      where: { id: data.id },
+    });
+
+    if (!reservation) {
+      throw new Error('Reservation not found');
+    }
+
+    Object.assign(reservation, data);
+    return await this.reservationRepo.save(reservation);
   }
 }

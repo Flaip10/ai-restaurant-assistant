@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Reservation } from 'src/reservations/reservation.entity';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(), // Load .env variables
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -13,6 +16,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true,
       synchronize: true, // Auto-create tables (disable in production)
     }),
+    TypeOrmModule.forFeature([Reservation]),
   ],
   exports: [TypeOrmModule],
 })

@@ -24,9 +24,18 @@ type Reservation {
   user: User!
 }
 
+type ListInfo {
+  totalItems: Int!
+}
+
+type ReservationPaginationOutput {
+  items: [Reservation!]!
+  listInfo: ListInfo!
+}
+
 type Query {
   """Get all reservations from the database"""
-  getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): [Reservation!]!
+  getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): ReservationPaginationOutput!
 }
 
 input ReservationFilterInput {

@@ -12,6 +12,7 @@ import { User } from 'src/users/user.entity';
 import { ReservationFilterInput } from './dto/get-reservation.input';
 import { PaginationInput } from './dto/pagination.input';
 import { SortInput } from './dto/sort.input';
+import { ReservationPaginationOutput } from './dto/get-reservation.output';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -22,7 +23,7 @@ export class ReservationResolver {
     private userRepo: Repository<User>,
   ) {}
 
-  @Query(() => [Reservation], {
+  @Query(() => ReservationPaginationOutput, {
     description: 'Get all reservations from the database',
   })
   async getReservations(
@@ -31,7 +32,7 @@ export class ReservationResolver {
     @Args('pagination', { type: () => PaginationInput, nullable: true })
     pagination?: PaginationInput,
     @Args('sort', { type: () => SortInput, nullable: true }) sort?: SortInput,
-  ): Promise<Reservation[]> {
+  ): Promise<ReservationPaginationOutput> {
     try {
       const query = this.reservationRepo
         .createQueryBuilder('reservation')
@@ -63,7 +64,15 @@ export class ReservationResolver {
       const limit = pagination?.limit ?? 10;
       query.skip((page - 1) * limit).take(limit);
 
-      return query.getMany();
+      const items = await query.getMany();
+
+      // Get total count before pagination
+      const totalItems = await query.getCount();
+
+      return {
+        items,
+        listInfo: { totalItems },
+      };
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch reservations');
     }

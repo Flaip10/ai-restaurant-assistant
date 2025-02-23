@@ -7,6 +7,9 @@ import { UpdateReservationInput } from './dto/update-reservation.input';
 import {
   NotFoundException,
   InternalServerErrorException,
+  UsePipes,
+  ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
 import { ReservationFilterInput } from './dto/get-reservation.input';
@@ -79,6 +82,22 @@ export class ReservationResolver {
   }
 
   @Mutation(() => Reservation, { description: 'Create a new reservation' })
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      exceptionFactory: (errors) =>
+        new BadRequestException(
+          errors
+            .map((err) =>
+              err.constraints
+                ? Object.values(err.constraints).join(', ')
+                : 'Invalid input',
+            )
+            .join('; '),
+        ),
+    }),
+  )
   async createReservation(
     @Args('data') data: CreateReservationInput,
   ): Promise<Reservation> {
@@ -95,6 +114,9 @@ export class ReservationResolver {
       const newReservation = this.reservationRepo.create({ ...data, user });
       return await this.reservationRepo.save(newReservation);
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Failed to create reservation');
     }
   }
@@ -117,6 +139,22 @@ export class ReservationResolver {
   @Mutation(() => Reservation, {
     description: 'Update an existing reservation',
   })
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      exceptionFactory: (errors) =>
+        new BadRequestException(
+          errors
+            .map((err) =>
+              err.constraints
+                ? Object.values(err.constraints).join(', ')
+                : 'Invalid input',
+            )
+            .join('; '),
+        ),
+    }),
+  )
   async updateReservation(
     @Args('data') data: UpdateReservationInput,
   ): Promise<Reservation> {
@@ -132,6 +170,12 @@ export class ReservationResolver {
       Object.assign(reservation, data);
       return await this.reservationRepo.save(reservation);
     } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Failed to update reservation');
     }
   }

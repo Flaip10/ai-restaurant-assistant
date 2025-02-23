@@ -91,7 +91,5 @@ input UpdateReservationInput {
 
   """Number of guests for the reservation"""
   guests: Float
-
-  """ID of the reservation to update"""
   id: Int!
 }

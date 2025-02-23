@@ -2,6 +2,45 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""A reservation in the system"""
+type Reservation {
+  """Unique ID of the reservation"""
+  id: Float!
+
+  """Name of the person making the reservation"""
+  name: String!
+
+  """Date of the reservation (YYYY-MM-DD)"""
+  date: String!
+
+  """Time of the reservation (HH:MM)"""
+  time: String!
+
+  """Number of guests for the reservation"""
+  guests: Float!
+}
+
 type Query {
-  sayHello: String!
+  """Get all reservations from the database"""
+  getReservations: [Reservation!]!
+}
+
+type Mutation {
+  """Create a new reservation"""
+  createReservation(data: CreateReservationInput!): Reservation!
+}
+
+"""Data required to create a new reservation"""
+input CreateReservationInput {
+  """Name of the person making the reservation"""
+  name: String!
+
+  """Date of the reservation (YYYY-MM-DD)"""
+  date: String!
+
+  """Time of the reservation (HH:MM)"""
+  time: String!
+
+  """Number of guests for the reservation"""
+  guests: Float!
 }

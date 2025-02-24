@@ -5,7 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+
 import { Reservation } from './reservation.entity';
 import { User } from '../users/user.entity';
 import { CreateReservationInput } from './dto/create-reservation.input';
@@ -14,28 +16,67 @@ import { ReservationFilterInput } from './dto/get-reservation.input';
 import { PaginationInput } from './dto/pagination.input';
 import { SortInput } from './dto/sort.input';
 import { UpdateReservationInput } from './dto/update-reservation.input';
+import { convertToMinutes, convertToTime } from 'src/utils/time.utils';
 
 @Injectable()
 export class ReservationService {
+  private readonly totalSeats: number;
+  private readonly slotDuration: number;
+  private readonly reservationDuration: number;
+
   constructor(
     @InjectRepository(Reservation)
     private readonly reservationRepo: Repository<Reservation>,
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-  ) {}
+
+    private readonly configService: ConfigService,
+  ) {
+    this.totalSeats = this.configService.get<number>('TOTAL_SEATS', 10);
+    this.slotDuration = this.configService.get<number>('SLOT_DURATION', 30);
+    this.reservationDuration = this.configService.get<number>(
+      'RESERVATION_DURATION',
+      60,
+    );
+  }
 
   async createReservation(data: CreateReservationInput): Promise<Reservation> {
     try {
+      // Check if user already exists and if not create a new one
       let user = await this.userRepo.findOne({
         where: { name: data.userName },
       });
-
       if (!user) {
         user = this.userRepo.create({ name: data.userName });
         await this.userRepo.save(user);
       }
 
+      // Convert Time to Slots
+      const startTime = convertToMinutes(data.time); // e.g., "20:30" → 1230 minutes
+      const endTime = startTime + this.reservationDuration; // 1-hour duration
+
+      // 🔍 Check for Overlapping Reservations
+      const existingReservations = await this.reservationRepo.find({
+        where: {
+          date: data.date,
+          time: Between(convertToTime(startTime), convertToTime(endTime - 1)),
+        },
+      });
+
+      // Calculate Occupied Seats
+      const occupiedSeats = existingReservations.reduce(
+        (sum, res) => sum + res.guests,
+        0,
+      );
+
+      if (occupiedSeats + data.guests > this.totalSeats) {
+        throw new BadRequestException(
+          'Not enough available seats for this time slot.',
+        );
+      }
+
+      // If slot is available, create reservation
       const newReservation = this.reservationRepo.create({ ...data, user });
       return await this.reservationRepo.save(newReservation);
     } catch (error) {

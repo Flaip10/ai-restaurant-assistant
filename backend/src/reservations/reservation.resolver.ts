@@ -8,6 +8,7 @@ import { PaginationInput } from './dto/pagination.input';
 import { SortInput } from './dto/sort.input';
 import { ReservationPaginationOutput } from './dto/get-reservation.output';
 import { ReservationService } from './reservation.service';
+import { CreateReservationOutput } from './dto/create-reservation.output';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -27,7 +28,9 @@ export class ReservationResolver {
     return this.reservationService.getReservations(filter, pagination, sort);
   }
 
-  @Mutation(() => Reservation, { description: 'Create a new reservation' })
+  @Mutation(() => CreateReservationOutput, {
+    description: 'Create a new reservation',
+  })
   @UsePipes(
     new ValidationPipe({
       whitelist: true,
@@ -46,7 +49,7 @@ export class ReservationResolver {
   )
   async createReservation(
     @Args('data') data: CreateReservationInput,
-  ): Promise<Reservation> {
+  ): Promise<CreateReservationOutput> {
     return this.reservationService.createReservation(data);
   }
 

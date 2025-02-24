@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { Reservation } from './reservation.entity';
@@ -16,7 +16,13 @@ import { ReservationFilterInput } from './dto/get-reservation.input';
 import { PaginationInput } from './dto/pagination.input';
 import { SortInput } from './dto/sort.input';
 import { UpdateReservationInput } from './dto/update-reservation.input';
+
 import { convertToMinutes, convertToTime } from 'src/utils/time.utils';
+import {
+  findNearestAvailableSlots,
+  isSlotAvailable,
+} from 'src/utils/reservation.utils';
+import { CreateReservationOutput } from './dto/create-reservation.output';
 
 @Injectable()
 export class ReservationService {
@@ -41,9 +47,11 @@ export class ReservationService {
     );
   }
 
-  async createReservation(data: CreateReservationInput): Promise<Reservation> {
+  async createReservation(
+    data: CreateReservationInput,
+  ): Promise<CreateReservationOutput> {
     try {
-      // Check if user already exists and if not create a new one
+      // Check if user exists or create one
       let user = await this.userRepo.findOne({
         where: { name: data.userName },
       });
@@ -52,37 +60,58 @@ export class ReservationService {
         await this.userRepo.save(user);
       }
 
-      // Convert Time to Slots
-      const startTime = convertToMinutes(data.time); // e.g., "20:30" → 1230 minutes
-      const endTime = startTime + this.reservationDuration; // 1-hour duration
+      // Convert time to slots
+      const startTime = convertToMinutes(data.time);
+      const endTime = startTime + this.reservationDuration;
 
-      // 🔍 Check for Overlapping Reservations
+      // 🔍 Fetch existing reservations for this date
       const existingReservations = await this.reservationRepo.find({
-        where: {
-          date: data.date,
-          time: Between(convertToTime(startTime), convertToTime(endTime - 1)),
-        },
+        where: { date: data.date },
       });
 
-      // Calculate Occupied Seats
-      const occupiedSeats = existingReservations.reduce(
-        (sum, res) => sum + res.guests,
-        0,
-      );
-
-      if (occupiedSeats + data.guests > this.totalSeats) {
-        throw new BadRequestException(
-          'Not enough available seats for this time slot.',
+      // Check if requested slot is available
+      if (
+        !isSlotAvailable(
+          existingReservations,
+          startTime,
+          endTime,
+          this.totalSeats,
+          data.guests,
+        )
+      ) {
+        // Find alternative slots
+        const nearestSlots = findNearestAvailableSlots(
+          existingReservations,
+          startTime / this.slotDuration,
+          this.slotDuration,
+          this.totalSeats,
+          data.guests,
         );
+
+        if (nearestSlots.length === 0) {
+          throw new BadRequestException(
+            `No availability for ${data.guests} guests on ${data.date}`,
+          );
+        }
+
+        return {
+          message: `Requested time is unavailable. Suggested available times:`,
+          availableSlots: nearestSlots.map((slot) =>
+            convertToTime(slot * this.slotDuration),
+          ),
+        };
       }
 
-      // If slot is available, create reservation
+      // Proceed with reservation
       const newReservation = this.reservationRepo.create({ ...data, user });
-      return await this.reservationRepo.save(newReservation);
+      const savedReservation = await this.reservationRepo.save(newReservation);
+      return {
+        message: 'Reservation successfully created!',
+        availableSlots: [],
+        reservation: savedReservation,
+      };
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Failed to create reservation');
     }
   }

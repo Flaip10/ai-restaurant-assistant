@@ -33,6 +33,12 @@ type ReservationPaginationOutput {
   listInfo: ListInfo!
 }
 
+type CreateReservationOutput {
+  message: String!
+  availableSlots: [String!]
+  reservation: Reservation
+}
+
 type Query {
   """Get all reservations from the database"""
   getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): ReservationPaginationOutput!
@@ -56,7 +62,7 @@ input SortInput {
 
 type Mutation {
   """Create a new reservation"""
-  createReservation(data: CreateReservationInput!): Reservation!
+  createReservation(data: CreateReservationInput!): CreateReservationOutput!
 
   """Cancel a reservation by ID"""
   cancelReservation(id: Int!): Boolean!

@@ -1,22 +1,25 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Reservation } from 'src/reservations/reservation.entity';
 import { User } from 'src/users/user.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), // Load .env variables
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      autoLoadEntities: true,
-      synchronize: true, // Auto-create tables (disable in production)
+    ConfigModule, // Import ConfigModule (loads .env globally)
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        autoLoadEntities: true,
+        synchronize: false, // Use migrations instead of auto-sync in production
+      }),
     }),
     TypeOrmModule.forFeature([Reservation, User]),
   ],

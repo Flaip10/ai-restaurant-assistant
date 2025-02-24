@@ -39,9 +39,19 @@ type CreateReservationOutput {
   reservation: Reservation
 }
 
+type CheckAvailabilityOutput {
+  message: String!
+
+  """Whether the requested time is available"""
+  isAvailable: Boolean!
+}
+
 type Query {
   """Get all reservations from the database"""
   getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): ReservationPaginationOutput!
+
+  """Check if a specific time slot is available"""
+  checkAvailability(data: CheckAvailabilityInput!): CheckAvailabilityOutput!
 }
 
 input ReservationFilterInput {
@@ -58,6 +68,12 @@ input PaginationInput {
 input SortInput {
   sortBy: String
   order: String = "ASC"
+}
+
+input CheckAvailabilityInput {
+  date: String!
+  time: String!
+  guests: Int!
 }
 
 type Mutation {

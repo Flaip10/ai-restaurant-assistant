@@ -9,6 +9,8 @@ import { SortInput } from './dto/sort.input';
 import { ReservationPaginationOutput } from './dto/get-reservation.output';
 import { ReservationService } from './reservation.service';
 import { CreateReservationOutput } from './dto/create-reservation.output';
+import { CheckAvailabilityOutput } from './dto/check-availability.output';
+import { CheckAvailabilityInput } from './dto/check-availability.input';
 
 @Resolver(() => Reservation)
 export class ReservationResolver {
@@ -26,6 +28,31 @@ export class ReservationResolver {
     sort?: SortInput,
   ): Promise<ReservationPaginationOutput> {
     return this.reservationService.getReservations(filter, pagination, sort);
+  }
+
+  @Query(() => CheckAvailabilityOutput, {
+    description: 'Check if a specific time slot is available',
+  })
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      exceptionFactory: (errors) =>
+        new BadRequestException(
+          errors
+            .map((err) =>
+              err.constraints
+                ? Object.values(err.constraints).join(', ')
+                : 'Invalid input',
+            )
+            .join('; '),
+        ),
+    }),
+  )
+  async checkAvailability(
+    @Args('data') data: CheckAvailabilityInput,
+  ): Promise<CheckAvailabilityOutput> {
+    return this.reservationService.checkAvailability(data);
   }
 
   @Mutation(() => CreateReservationOutput, {

@@ -1,4 +1,4 @@
-# AI Restaurant Assistant 🍽️🤖
+# AI Restaurant Assistant 🍽️🤖 [WIP]
 
 ## Overview
 
@@ -50,8 +50,3 @@ docker-compose up --build
 -   Integrate **Twilio/Asterisk** for voice calls
 -   Improve **LLM fine-tuning** for better voice interaction
 -   Implement **CI/CD Pipelines** for automated deployments
-
-## Contributing
-
-1. Fork the repo & create a new branch (`feature-branch`)
-2. Commit your changes and open a **Pull Request**.

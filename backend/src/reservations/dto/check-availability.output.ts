@@ -5,8 +5,9 @@ export class CheckAvailabilityOutput {
   @Field()
   message?: string;
 
-  @Field(() => Boolean, {
-    description: 'Whether the requested time is available',
+  @Field(() => [String], {
+    nullable: true,
+    description: 'Available time slots',
   })
-  isAvailable!: boolean;
+  availableSlots?: string[];
 }

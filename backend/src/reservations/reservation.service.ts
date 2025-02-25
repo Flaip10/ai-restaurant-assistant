@@ -19,6 +19,7 @@ import { UpdateReservationInput } from './dto/update-reservation.input';
 
 import { convertToMinutes, convertToTime } from 'src/utils/time.utils';
 import {
+  findAvailableSlots,
   findNearestAvailableSlots,
   isSlotAvailable,
 } from 'src/utils/reservation.utils';
@@ -103,29 +104,62 @@ export class ReservationService {
     data: CheckAvailabilityInput,
   ): Promise<CheckAvailabilityOutput> {
     try {
-      // Convert time to slot
-      const startTime = convertToMinutes(data.time);
-      const endTime = startTime + this.reservationDuration;
+      const { date, guests, time, timeRange } = data;
 
       // 🔍 Fetch existing reservations for this date
       const existingReservations = await this.reservationRepo.find({
-        where: { date: data.date },
+        where: { date: date },
       });
 
-      // Check if requested slot is available
-      const isAvailable = isSlotAvailable(
-        existingReservations,
-        startTime,
-        endTime,
-        this.totalSeats,
-        data.guests,
-      );
+      if (time) {
+        // Convert time to slot
+        const startTime = convertToMinutes(time);
+        const endTime = startTime + this.reservationDuration;
+
+        // Check if requested slot is available
+        const isAvailable = isSlotAvailable(
+          existingReservations,
+          startTime,
+          endTime,
+          this.totalSeats,
+          guests,
+        );
+
+        return {
+          availableSlots: isAvailable ? [time] : [],
+
+          message: isAvailable
+            ? 'Time slot available'
+            : 'Time slot unavailable',
+        };
+      } else if (timeRange) {
+        // Case 2: Fetch All Available Slots in the Given Range
+        const startSlot = convertToMinutes(timeRange.start) / this.slotDuration;
+        const endSlot = convertToMinutes(timeRange.end) / this.slotDuration;
+
+        const availableSlots = findAvailableSlots(
+          existingReservations,
+          { startSlot, endSlot },
+          this.slotDuration,
+          this.totalSeats,
+          guests,
+        );
+
+        return {
+          availableSlots: availableSlots.map((slot) =>
+            convertToTime(slot * this.slotDuration),
+          ),
+          message:
+            availableSlots.length > 0
+              ? 'Available slots within range'
+              : 'No available slots in the given range',
+        };
+      }
 
       return {
-        message: isAvailable
-          ? 'Time slot is available!'
-          : 'Time slot is not available!',
-        isAvailable,
+        availableSlots: [],
+        message:
+          'Invalid request: Please provide either a specific time or a time range.',
       };
     } catch (error) {
       throw new InternalServerErrorException('Failed to check availability');

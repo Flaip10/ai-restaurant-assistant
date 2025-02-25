@@ -61,3 +61,35 @@ export function findNearestAvailableSlots(
 
   return availableSlots;
 }
+
+export function findAvailableSlots(
+  reservations: { time: string; guests: number }[],
+  slotRange: { startSlot: number; endSlot: number },
+  slotDuration: number,
+  totalSeats: number,
+  guests: number,
+): number[] {
+  const availableSlots: number[] = [];
+
+  // Check available slots for the given range
+  for (
+    let i = slotRange.startSlot + 1;
+    i < slotRange.endSlot / slotDuration;
+    i++
+  ) {
+    if (
+      isSlotAvailable(
+        reservations,
+        i * slotDuration,
+        (i + 2) * slotDuration,
+        totalSeats,
+        guests,
+      )
+    ) {
+      availableSlots.push(i);
+      break;
+    }
+  }
+
+  return availableSlots;
+}

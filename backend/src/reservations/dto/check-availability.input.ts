@@ -1,5 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InputType, Field, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
@@ -11,6 +9,7 @@ import {
   ValidateNested,
   ValidateIf,
 } from 'class-validator';
+import { TimeOrRange } from 'src/decorators/time-or-range.decorator';
 
 @InputType()
 export class TimeRangeInput {
@@ -34,6 +33,7 @@ export class CheckAvailabilityInput {
   @IsDateString({}, { message: 'Date must be in YYYY-MM-DD format' })
   date!: string;
 
+  @TimeOrRange({ message: 'Either time or timeRange must be provided.' }) // Ensures one of `time` or `timeRange` is required
   @Field({ nullable: true })
   @ValidateIf((o) => !o.timeRange) // Only required if timeRange is not provided
   @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
@@ -46,6 +46,7 @@ export class CheckAvailabilityInput {
   @Min(1, { message: 'Guests must be at least 1' })
   guests!: number;
 
+  @TimeOrRange({ message: 'Either time or timeRange must be provided.' }) // Ensures one of `time` or `timeRange` is required
   @Field(() => TimeRangeInput, { nullable: true })
   @ValidateIf((o) => !o.time) // Only required if time is not provided
   @ValidateNested()

@@ -33,20 +33,3 @@ ai-restaurant-assistant/
 ├── README.md # Project documentation
 ├── .github/ # CI/CD Workflows
 ```
-
-## Setup Instructions
-
-### Prerequisites
-
--   Install **Docker & Docker Compose**
--   Install **Node.js** and **Python** (if running manually)
-
-## Running the Project
-
-docker-compose up --build
-
-## Future Enhancements
-
--   Integrate **Twilio/Asterisk** for voice calls
--   Improve **LLM fine-tuning** for better voice interaction
--   Implement **CI/CD Pipelines** for automated deployments

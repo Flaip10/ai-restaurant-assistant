@@ -59,6 +59,16 @@ export class ReservationService {
     sort?: SortInput,
   ): Promise<ReservationPaginationOutput> {
     try {
+      // Generate a unique cache key based on filters
+      const cacheKey = `reservations:${JSON.stringify(filter)}:${JSON.stringify(pagination)}:${JSON.stringify(sort)}`;
+
+      // 🔍 Check Redis Cache
+      const cachedData =
+        await this.redisService.get<ReservationPaginationOutput>(cacheKey);
+      if (cachedData) {
+        return cachedData; //Return cached data
+      }
+
       const query = this.reservationRepo
         .createQueryBuilder('reservation')
         .leftJoinAndSelect('reservation.user', 'user');
@@ -94,10 +104,15 @@ export class ReservationService {
       // Get total count before pagination
       const totalItems = await query.getCount();
 
-      return {
+      const result = {
         items,
         listInfo: { totalItems },
       };
+
+      // Store in Redis Cache (Set TTL for 5 minutes)
+      await this.redisService.set(cacheKey, result, 300);
+
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch reservations');
     }

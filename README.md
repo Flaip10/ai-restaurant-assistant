@@ -15,7 +15,7 @@ AI-powered voice assistant that allows users to **call a number, speak with an A
 ## Tech Stack
 
 -   **AI Model:** Llama.cpp (Offline)
--   **Backend:** FastAPI (Python) or Express (Node.js) + GraphQL
+-   **Backend:** NestJS (Node.js) + GraphQL
 -   **Database:** PostgreSQL
 -   **Frontend:** React (Next.js)
 -   **Infrastructure:** Docker + Docker Compose
@@ -24,7 +24,7 @@ AI-powered voice assistant that allows users to **call a number, speak with an A
 
 ```bash
 ai-restaurant-assistant/
-├── backend/ # FastAPI/Express + GraphQL + PostgreSQL
+├── backend/ # NestJS + GraphQL + PostgreSQL
 ├── frontend/ # React (Next.js) dashboard
 ├── llm/ # Llama.cpp setup and integration
 ├── database/ # PostgreSQL setup and migrations

@@ -3,6 +3,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -26,6 +27,7 @@ import {
 import { CreateReservationOutput } from './dto/create-reservation.output';
 import { CheckAvailabilityInput } from './dto/check-availability.input';
 import { CheckAvailabilityOutput } from './dto/check-availability.output';
+import Redis from 'ioredis';
 
 @Injectable()
 export class ReservationService {
@@ -41,6 +43,8 @@ export class ReservationService {
     private readonly userRepo: Repository<User>,
 
     private readonly configService: ConfigService,
+
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) {
     this.totalSeats = this.configService.get<number>('TOTAL_SEATS', 10);
     this.slotDuration = this.configService.get<number>('SLOT_DURATION', 30);
@@ -48,6 +52,11 @@ export class ReservationService {
       'RESERVATION_DURATION',
       60,
     );
+  }
+
+  async testRedis(): Promise<string | null> {
+    await this.redisClient.set('testKey', 'Hello from NestJS');
+    return await this.redisClient.get('testKey'); // Allow null return
   }
 
   async getReservations(

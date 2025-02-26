@@ -111,4 +111,9 @@ export class ReservationResolver {
   ): Promise<Reservation> {
     return this.reservationService.updateReservation(data);
   }
+
+  @Query(() => String)
+  async testRedis() {
+    return this.reservationService.testRedis();
+  }
 }

@@ -42,8 +42,8 @@ type CreateReservationOutput {
 type CheckAvailabilityOutput {
   message: String!
 
-  """Whether the requested time is available"""
-  isAvailable: Boolean!
+  """Available time slots"""
+  availableSlots: [String!]
 }
 
 type Query {
@@ -52,6 +52,7 @@ type Query {
 
   """Check if a specific time slot is available"""
   checkAvailability(data: CheckAvailabilityInput!): CheckAvailabilityOutput!
+  testRedis: String!
 }
 
 input ReservationFilterInput {
@@ -72,8 +73,17 @@ input SortInput {
 
 input CheckAvailabilityInput {
   date: String!
-  time: String!
+  time: String
   guests: Int!
+  timeRange: TimeRangeInput
+}
+
+input TimeRangeInput {
+  """Start time in HH:mm format (24-hour)"""
+  start: String!
+
+  """End time in HH:mm format (24-hour)"""
+  end: String!
 }
 
 type Mutation {

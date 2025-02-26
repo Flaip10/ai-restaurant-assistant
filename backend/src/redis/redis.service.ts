@@ -18,4 +18,15 @@ export class RedisService {
   async del(key: string): Promise<void> {
     await this.redisClient.del(key);
   }
+
+  async clearReservationCache(): Promise<void> {
+    const reservationKeys = await this.redisClient.keys('reservations:*');
+    const availabilityKeys = await this.redisClient.keys('availability:*');
+
+    const allKeys = [...reservationKeys, ...availabilityKeys];
+
+    if (allKeys.length > 0) {
+      await this.redisClient.del(...allKeys);
+    }
+  }
 }

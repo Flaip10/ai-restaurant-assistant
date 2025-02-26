@@ -261,8 +261,8 @@ export class ReservationService {
       const newReservation = this.reservationRepo.create({ ...data, user });
       const savedReservation = await this.reservationRepo.save(newReservation);
 
-      // Clear reservation cache from Redis
-      await this.redisService.del('reservations:*');
+      // Clear cached reservations
+      await this.redisService.clearReservationCache();
 
       return {
         message: 'Reservation successfully created!',
@@ -283,8 +283,8 @@ export class ReservationService {
         throw new NotFoundException(`Reservation with ID ${id} not found`);
       }
 
-      // Clear reservation cache from Redis
-      await this.redisService.del('reservations:*');
+      // Clear cached reservations
+      await this.redisService.clearReservationCache();
 
       return true;
     } catch (error) {
@@ -304,8 +304,8 @@ export class ReservationService {
 
       Object.assign(reservation, data);
 
-      // Clear reservation cache from Redis
-      await this.redisService.del('reservations:*');
+      // Clear cached reservations
+      await this.redisService.clearReservationCache();
 
       return await this.reservationRepo.save(reservation);
     } catch (error) {

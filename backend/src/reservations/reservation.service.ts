@@ -260,6 +260,10 @@ export class ReservationService {
       // Proceed with reservation
       const newReservation = this.reservationRepo.create({ ...data, user });
       const savedReservation = await this.reservationRepo.save(newReservation);
+
+      // Clear reservation cache from Redis
+      await this.redisService.del('reservations:*');
+
       return {
         message: 'Reservation successfully created!',
         availableSlots: [],
@@ -279,6 +283,9 @@ export class ReservationService {
         throw new NotFoundException(`Reservation with ID ${id} not found`);
       }
 
+      // Clear reservation cache from Redis
+      await this.redisService.del('reservations:*');
+
       return true;
     } catch (error) {
       throw new InternalServerErrorException('Failed to cancel reservation');
@@ -296,6 +303,10 @@ export class ReservationService {
       }
 
       Object.assign(reservation, data);
+
+      // Clear reservation cache from Redis
+      await this.redisService.del('reservations:*');
+
       return await this.reservationRepo.save(reservation);
     } catch (error) {
       if (

@@ -19,14 +19,27 @@ export class RedisService {
     await this.redisClient.del(key);
   }
 
+  async scanAndDelete(pattern: string): Promise<void> {
+    let cursor = '0';
+
+    do {
+      const [nextCursor, keys] = await this.redisClient.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        100,
+      );
+      cursor = nextCursor;
+
+      if (keys.length > 0) {
+        await this.redisClient.del(...keys);
+      }
+    } while (cursor !== '0');
+  }
+
   async clearReservationCache(): Promise<void> {
-    const reservationKeys = await this.redisClient.keys('reservations:*');
-    const availabilityKeys = await this.redisClient.keys('availability:*');
-
-    const allKeys = [...reservationKeys, ...availabilityKeys];
-
-    if (allKeys.length > 0) {
-      await this.redisClient.del(...allKeys);
-    }
+    await this.scanAndDelete('reservations:*');
+    await this.scanAndDelete('availability:*');
   }
 }

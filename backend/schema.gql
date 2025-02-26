@@ -52,7 +52,6 @@ type Query {
 
   """Check if a specific time slot is available"""
   checkAvailability(data: CheckAvailabilityInput!): CheckAvailabilityOutput!
-  testRedis: String!
 }
 
 input ReservationFilterInput {

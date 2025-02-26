@@ -3,7 +3,6 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
-  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -27,7 +26,7 @@ import {
 import { CreateReservationOutput } from './dto/create-reservation.output';
 import { CheckAvailabilityInput } from './dto/check-availability.input';
 import { CheckAvailabilityOutput } from './dto/check-availability.output';
-import Redis from 'ioredis';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class ReservationService {
@@ -44,7 +43,7 @@ export class ReservationService {
 
     private readonly configService: ConfigService,
 
-    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+    private readonly redisService: RedisService,
   ) {
     this.totalSeats = this.configService.get<number>('TOTAL_SEATS', 10);
     this.slotDuration = this.configService.get<number>('SLOT_DURATION', 30);
@@ -52,11 +51,6 @@ export class ReservationService {
       'RESERVATION_DURATION',
       60,
     );
-  }
-
-  async testRedis(): Promise<string | null> {
-    await this.redisClient.set('testKey', 'Hello from NestJS');
-    return await this.redisClient.get('testKey'); // Allow null return
   }
 
   async getReservations(
@@ -115,6 +109,16 @@ export class ReservationService {
     try {
       const { date, guests, time, timeRange } = data;
 
+      // Generate a unique cache key based on query parameters
+      const cacheKey = `availability:${date}:${time || timeRange?.start}-${timeRange?.end || 'none'}:${guests}`;
+
+      // Try to fetch cached data from Redis
+      const cachedResult =
+        await this.redisService.get<CheckAvailabilityOutput>(cacheKey);
+      if (cachedResult) {
+        return cachedResult; // Return cached result if available
+      }
+
       // 🔍 Fetch existing reservations for this date
       const existingReservations = await this.reservationRepo.find({
         where: { date: date },
@@ -134,15 +138,19 @@ export class ReservationService {
           guests,
         );
 
-        return {
-          availableSlots: isAvailable ? [time] : [],
-
+        const result: CheckAvailabilityOutput = {
           message: isAvailable
             ? 'Time slot available'
             : 'Time slot unavailable',
+          availableSlots: isAvailable ? [time] : [],
         };
+
+        // Store computed result in Redis with expiration of 5 minutes (300 seconds)
+        await this.redisService.set(cacheKey, result, 300);
+
+        return result;
       } else if (timeRange) {
-        // Case 2: Fetch All Available Slots in the Given Range
+        // Fetch All Available Slots in the Given Range
         const startSlot = convertToMinutes(timeRange.start) / this.slotDuration;
         const endSlot = convertToMinutes(timeRange.end) / this.slotDuration;
 
@@ -154,15 +162,19 @@ export class ReservationService {
           guests,
         );
 
-        return {
-          availableSlots: availableSlots.map((slot) =>
-            convertToTime(slot * this.slotDuration),
-          ),
+        const result: CheckAvailabilityOutput = {
           message:
             availableSlots.length > 0
               ? 'Available slots within range'
               : 'No available slots in the given range',
+          availableSlots: availableSlots.map((slot) =>
+            convertToTime(slot * this.slotDuration),
+          ),
         };
+
+        await this.redisService.set(cacheKey, result, 300);
+
+        return result;
       }
 
       return {

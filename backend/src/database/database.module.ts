@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Reservation } from 'src/reservations/reservation.entity';
-import { User } from 'src/users/user.entity';
+import { Customer } from 'src/customers/customer.entity';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { User } from 'src/users/user.entity';
         synchronize: false, // Use migrations instead of auto-sync in production
       }),
     }),
-    TypeOrmModule.forFeature([Reservation, User]),
+    TypeOrmModule.forFeature([Reservation, Customer]),
   ],
   exports: [TypeOrmModule],
 })

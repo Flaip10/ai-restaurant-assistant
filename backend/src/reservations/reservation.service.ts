@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { Reservation } from './reservation.entity';
-import { User } from '../users/user.entity';
+import { Customer } from '../customers/customer.entity';
 import { CreateReservationInput } from './dto/create-reservation.input';
 import { ReservationPaginationOutput } from './dto/get-reservation.output';
 import { ReservationFilterInput } from './dto/get-reservation.input';
@@ -38,8 +38,8 @@ export class ReservationService {
     @InjectRepository(Reservation)
     private readonly reservationRepo: Repository<Reservation>,
 
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
 
     private readonly configService: ConfigService,
 
@@ -71,11 +71,13 @@ export class ReservationService {
 
       const query = this.reservationRepo
         .createQueryBuilder('reservation')
-        .leftJoinAndSelect('reservation.user', 'user');
+        .leftJoinAndSelect('reservation.customer', 'customer');
 
       // Apply Filters
-      if (filter?.userName) {
-        query.andWhere('user.name = :userName', { userName: filter.userName });
+      if (filter?.customerName) {
+        query.andWhere('customer.name = :customerName', {
+          customerName: filter.customerName,
+        });
       }
       if (filter?.date) {
         query.andWhere('reservation.date = :date', { date: filter.date });
@@ -206,13 +208,13 @@ export class ReservationService {
     data: CreateReservationInput,
   ): Promise<CreateReservationOutput> {
     try {
-      // Check if user exists or create one
-      let user = await this.userRepo.findOne({
-        where: { name: data.userName },
+      // Check if customer exists or create one
+      let customer = await this.customerRepo.findOne({
+        where: { name: data.customerName },
       });
-      if (!user) {
-        user = this.userRepo.create({ name: data.userName });
-        await this.userRepo.save(user);
+      if (!customer) {
+        customer = this.customerRepo.create({ name: data.customerName });
+        await this.customerRepo.save(customer);
       }
 
       // Convert time to slots
@@ -258,7 +260,7 @@ export class ReservationService {
       }
 
       // Proceed with reservation
-      const newReservation = this.reservationRepo.create({ ...data, user });
+      const newReservation = this.reservationRepo.create({ ...data, customer });
       const savedReservation = await this.reservationRepo.save(newReservation);
 
       // Clear cached reservations

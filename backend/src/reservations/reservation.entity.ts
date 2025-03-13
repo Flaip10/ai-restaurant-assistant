@@ -1,5 +1,5 @@
 import { ObjectType, Field } from '@nestjs/graphql';
-import { User } from 'src/users/user.entity';
+import { Customer } from 'src/customers/customer.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -28,10 +28,10 @@ export class Reservation {
   @Column()
   guests!: number;
 
-  @Field(() => User, { description: 'User who made the reservation' })
-  @ManyToOne(() => User, (user) => user.reservations, {
+  @Field(() => Customer, { description: 'Customer who made the reservation' })
+  @ManyToOne(() => Customer, (customer) => customer.reservations, {
     eager: true,
     nullable: false,
   })
-  user!: User;
+  customer!: Customer;
 }

@@ -10,10 +10,10 @@ import {
 
 @InputType()
 export class CreateReservationInput {
-  @Field({ description: 'Name of the user making the reservation' })
+  @Field({ description: 'Name of the customer making the reservation' })
   @IsString()
-  @IsNotEmpty({ message: 'User name is required' })
-  userName!: string;
+  @IsNotEmpty({ message: 'Customer name is required' })
+  customerName!: string;
 
   @Field({ description: 'Date of the reservation (YYYY-MM-DD)' })
   @IsDateString()

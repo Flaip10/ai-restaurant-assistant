@@ -4,7 +4,7 @@ import { Reservation } from '../reservations/reservation.entity';
 
 @ObjectType()
 @Entity()
-export class User {
+export class Customer {
   @Field()
   @PrimaryGeneratedColumn()
   id!: number;
@@ -14,6 +14,6 @@ export class User {
   name!: string;
 
   @Field(() => [Reservation], { nullable: true })
-  @OneToMany(() => Reservation, (reservation) => reservation.user)
+  @OneToMany(() => Reservation, (reservation) => reservation.customer)
   reservations!: Reservation[];
 }

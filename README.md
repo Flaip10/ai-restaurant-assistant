@@ -2,7 +2,7 @@
 
 ## Overview
 
-AI-powered voice assistant that allows users to **call a number, speak with an AI, and make a restaurant reservation**. The project explores **voice-to-AI interaction, LLM processing, and API-based reservation management**.
+AI-powered voice assistant that allows customers to **call a number, speak with an AI, and make a restaurant reservation**. The project explores **voice-to-AI interaction, LLM processing, and API-based reservation management**.
 
 ## Features
 

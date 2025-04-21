@@ -24,7 +24,10 @@ export function findNearestAvailableSlots(
   slotDuration: number,
   totalSeats: number,
   guests: number,
+  reservationDuration: number,
 ): number[] {
+  // Calculate how many slots a reservation takes
+  const slotsPerReservation = Math.ceil(reservationDuration / slotDuration);
   const availableSlots: number[] = [];
 
   // Check later slots
@@ -33,7 +36,7 @@ export function findNearestAvailableSlots(
       isSlotAvailable(
         reservations,
         i * slotDuration,
-        (i + 2) * slotDuration,
+        (i + slotsPerReservation) * slotDuration,
         totalSeats,
         guests,
       )
@@ -49,7 +52,7 @@ export function findNearestAvailableSlots(
       isSlotAvailable(
         reservations,
         i * slotDuration,
-        (i + 2) * slotDuration,
+        (i + slotsPerReservation) * slotDuration,
         totalSeats,
         guests,
       )
@@ -68,7 +71,10 @@ export function findAvailableSlots(
   slotDuration: number,
   totalSeats: number,
   guests: number,
+  reservationDuration: number,
 ): number[] {
+  // Calculate how many slots a reservation takes
+  const slotsPerReservation = Math.ceil(reservationDuration / slotDuration);
   const availableSlots: number[] = [];
 
   // Check available slots for the given range
@@ -81,7 +87,7 @@ export function findAvailableSlots(
       isSlotAvailable(
         reservations,
         i * slotDuration,
-        (i + 2) * slotDuration,
+        (i + slotsPerReservation) * slotDuration,
         totalSeats,
         guests,
       )

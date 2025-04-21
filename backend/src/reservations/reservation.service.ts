@@ -177,6 +177,7 @@ export class ReservationService {
           this.slotDuration,
           this.totalSeats,
           guests,
+          this.reservationDuration,
         );
 
         const result: CheckAvailabilityOutput = {
@@ -243,6 +244,7 @@ export class ReservationService {
           this.slotDuration,
           this.totalSeats,
           data.guests,
+          this.reservationDuration,
         );
 
         if (nearestSlots.length === 0) {

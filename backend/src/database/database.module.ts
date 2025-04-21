@@ -3,23 +3,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Reservation } from 'src/reservations/reservation.entity';
 import { Customer } from 'src/customers/customer.entity';
+import { AppDataSource } from './data-source'; // Import DataSource
 
 @Module({
   imports: [
-    ConfigModule, // Import ConfigModule (loads .env globally)
+    ConfigModule, // Load environment variables globally
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: false, // Use migrations instead of auto-sync in production
-      }),
+      useFactory: async () => {
+        return {
+          ...AppDataSource.options, // Use the same config from data-source.ts
+          autoLoadEntities: true,
+        };
+      },
     }),
     TypeOrmModule.forFeature([Reservation, Customer]),
   ],

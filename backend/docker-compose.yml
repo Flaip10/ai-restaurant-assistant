@@ -1,6 +1,28 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${DB_USER:-myuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mypassword}
+      POSTGRES_DB: ${DB_NAME:-restaurant_reservations}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-myuser} -d ${DB_NAME:-restaurant_reservations}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:latest
     container_name: redis_server
@@ -10,7 +32,14 @@ services:
     volumes:
       - redis_data:/data
     command: ['redis-server', '--save', '60', '1', '--loglevel', 'warning']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
+  postgres_data:
+    driver: local
   redis_data:
     driver: local

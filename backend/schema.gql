@@ -2,7 +2,7 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type User {
+type Customer {
   id: Float!
   name: String!
   reservations: [Reservation!]
@@ -20,8 +20,8 @@ type Reservation {
   """Number of guests for the reservation"""
   guests: Float!
 
-  """User who made the reservation"""
-  user: User!
+  """Customer who made the reservation"""
+  customer: Customer!
 }
 
 type ListInfo {
@@ -55,7 +55,7 @@ type Query {
 }
 
 input ReservationFilterInput {
-  userName: String
+  customerName: String
   date: String
   guests: Int
 }
@@ -97,8 +97,8 @@ type Mutation {
 }
 
 input CreateReservationInput {
-  """Name of the user making the reservation"""
-  userName: String!
+  """Name of the customer making the reservation"""
+  customerName: String!
 
   """Date of the reservation (YYYY-MM-DD)"""
   date: String!
@@ -111,8 +111,8 @@ input CreateReservationInput {
 }
 
 input UpdateReservationInput {
-  """Name of the user making the reservation"""
-  userName: String
+  """Name of the customer making the reservation"""
+  customerName: String
 
   """Date of the reservation (YYYY-MM-DD)"""
   date: String

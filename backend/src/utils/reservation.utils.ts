@@ -78,11 +78,7 @@ export function findAvailableSlots(
   const availableSlots: number[] = [];
 
   // Check available slots for the given range
-  for (
-    let i = slotRange.startSlot + 1;
-    i < slotRange.endSlot / slotDuration;
-    i++
-  ) {
+  for (let i = slotRange.startSlot; i < slotRange.endSlot; i++) {
     if (
       isSlotAvailable(
         reservations,
@@ -93,7 +89,6 @@ export function findAvailableSlots(
       )
     ) {
       availableSlots.push(i);
-      break;
     }
   }
 

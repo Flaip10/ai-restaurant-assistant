@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
-import Redis from 'ioredis';
 
 // Create a mock for the Redis client
 const mockRedisClient = {
@@ -42,12 +41,9 @@ describe('RedisService', () => {
 
       await service.set(key, value, ttl);
 
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        key,
-        JSON.stringify(value),
-        'EX',
-        ttl,
-      );
+      const mockFn = mockRedisClient.set;
+      const calls = mockFn.mock.calls;
+      expect(calls[0]).toEqual([key, JSON.stringify(value), 'EX', ttl]);
     });
 
     it('should use default TTL if not provided', async () => {
@@ -56,12 +52,9 @@ describe('RedisService', () => {
 
       await service.set(key, value);
 
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        key,
-        JSON.stringify(value),
-        'EX',
-        3600, // Default TTL
-      );
+      const mockFn = mockRedisClient.set;
+      const calls = mockFn.mock.calls;
+      expect(calls[0]).toEqual([key, JSON.stringify(value), 'EX', 3600]);
     });
   });
 
@@ -74,7 +67,9 @@ describe('RedisService', () => {
 
       const result = await service.get(key);
 
-      expect(mockRedisClient.get).toHaveBeenCalledWith(key);
+      const mockFn = mockRedisClient.get;
+      const calls = mockFn.mock.calls;
+      expect(calls[0]).toEqual([key]);
       expect(result).toEqual(value);
     });
 
@@ -85,7 +80,9 @@ describe('RedisService', () => {
 
       const result = await service.get(key);
 
-      expect(mockRedisClient.get).toHaveBeenCalledWith(key);
+      const mockFn = mockRedisClient.get;
+      const calls = mockFn.mock.calls;
+      expect(calls[0]).toEqual([key]);
       expect(result).toBeNull();
     });
   });
@@ -96,7 +93,9 @@ describe('RedisService', () => {
 
       await service.del(key);
 
-      expect(mockRedisClient.del).toHaveBeenCalledWith(key);
+      const mockFn = mockRedisClient.del;
+      const calls = mockFn.mock.calls;
+      expect(calls[0]).toEqual([key]);
     });
   });
 
@@ -112,32 +111,18 @@ describe('RedisService', () => {
       await service.scanAndDelete(pattern);
 
       // Should have called scan twice with the correct pattern
-      expect(mockRedisClient.scan).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.scan).toHaveBeenNthCalledWith(
-        1,
-        '0',
-        'MATCH',
-        pattern,
-        'COUNT',
-        100,
-      );
-      expect(mockRedisClient.scan).toHaveBeenNthCalledWith(
-        2,
-        '42',
-        'MATCH',
-        pattern,
-        'COUNT',
-        100,
-      );
+      const scanMock = mockRedisClient.scan;
+      const scanCalls = scanMock.mock.calls;
+      expect(scanCalls.length).toBe(2);
+      expect(scanCalls[0]).toEqual(['0', 'MATCH', pattern, 'COUNT', 100]);
+      expect(scanCalls[1]).toEqual(['42', 'MATCH', pattern, 'COUNT', 100]);
 
       // Should have called del with the keys from both scans
-      expect(mockRedisClient.del).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.del).toHaveBeenNthCalledWith(
-        1,
-        'test-1',
-        'test-2',
-      );
-      expect(mockRedisClient.del).toHaveBeenNthCalledWith(2, 'test-3');
+      const delMock = mockRedisClient.del;
+      const delCalls = delMock.mock.calls;
+      expect(delCalls.length).toBe(2);
+      expect(delCalls[0]).toEqual(['test-1', 'test-2']);
+      expect(delCalls[1]).toEqual(['test-3']);
     });
 
     it('should not call del if no keys are found', async () => {
@@ -148,7 +133,9 @@ describe('RedisService', () => {
 
       await service.scanAndDelete(pattern);
 
-      expect(mockRedisClient.scan).toHaveBeenCalledTimes(1);
+      const scanMock = mockRedisClient.scan;
+      const scanCalls = scanMock.mock.calls;
+      expect(scanCalls.length).toBe(1);
       expect(mockRedisClient.del).not.toHaveBeenCalled();
     });
   });
@@ -156,19 +143,15 @@ describe('RedisService', () => {
   describe('clearReservationCache', () => {
     it('should clear both reservation and availability caches', async () => {
       // Mock implementation of scanAndDelete
-      jest.spyOn(service, 'scanAndDelete').mockImplementation(async () => {});
+      const scanAndDeleteSpy = jest
+        .spyOn(service, 'scanAndDelete')
+        .mockImplementation(async () => {});
 
       await service.clearReservationCache();
 
-      expect(service.scanAndDelete).toHaveBeenCalledTimes(2);
-      expect(service.scanAndDelete).toHaveBeenNthCalledWith(
-        1,
-        'reservations:*',
-      );
-      expect(service.scanAndDelete).toHaveBeenNthCalledWith(
-        2,
-        'availability:*',
-      );
+      expect(scanAndDeleteSpy).toHaveBeenCalledTimes(2);
+      expect(scanAndDeleteSpy).toHaveBeenNthCalledWith(1, 'reservations:*');
+      expect(scanAndDeleteSpy).toHaveBeenNthCalledWith(2, 'availability:*');
     });
   });
 });

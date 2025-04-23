@@ -4,36 +4,77 @@ import { ReservationService } from './reservation.service';
 import { CreateReservationInput } from './dto/create-reservation.input';
 import { UpdateReservationInput } from './dto/update-reservation.input';
 import { CheckAvailabilityInput } from './dto/check-availability.input';
+import { Reservation } from './reservation.entity';
+import { Customer } from '../customers/customer.entity';
+import { ReservationPaginationOutput } from './dto/get-reservation.output';
+import { CreateReservationOutput } from './dto/create-reservation.output';
+import { CheckAvailabilityOutput } from './dto/check-availability.output';
+import { ReservationFilterInput } from './dto/get-reservation.input';
+import { PaginationInput } from './dto/pagination.input';
+import { SortInput } from './dto/sort.input';
 
-// Mock the ReservationService
-const mockReservationService = {
-  getReservations: jest.fn(),
-  checkAvailability: jest.fn(),
-  createReservation: jest.fn(),
-  cancelReservation: jest.fn(),
-  updateReservation: jest.fn(),
+type MockReservationService = {
+  getReservations: jest.Mock<
+    Promise<ReservationPaginationOutput>,
+    [
+      ReservationFilterInput | undefined,
+      PaginationInput | undefined,
+      SortInput | undefined,
+    ]
+  >;
+  checkAvailability: jest.Mock<
+    Promise<CheckAvailabilityOutput>,
+    [CheckAvailabilityInput]
+  >;
+  createReservation: jest.Mock<
+    Promise<CreateReservationOutput>,
+    [CreateReservationInput]
+  >;
+  cancelReservation: jest.Mock<Promise<boolean>, [number]>;
+  updateReservation: jest.Mock<Promise<Reservation>, [UpdateReservationInput]>;
 };
 
 describe('ReservationResolver', () => {
   let resolver: ReservationResolver;
-  let service: ReservationService;
+  let service: MockReservationService;
 
   beforeEach(async () => {
+    const mockService: MockReservationService = {
+      getReservations: jest.fn<
+        Promise<ReservationPaginationOutput>,
+        [
+          ReservationFilterInput | undefined,
+          PaginationInput | undefined,
+          SortInput | undefined,
+        ]
+      >(),
+      checkAvailability: jest.fn<
+        Promise<CheckAvailabilityOutput>,
+        [CheckAvailabilityInput]
+      >(),
+      createReservation: jest.fn<
+        Promise<CreateReservationOutput>,
+        [CreateReservationInput]
+      >(),
+      cancelReservation: jest.fn<Promise<boolean>, [number]>(),
+      updateReservation: jest.fn<
+        Promise<Reservation>,
+        [UpdateReservationInput]
+      >(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReservationResolver,
         {
           provide: ReservationService,
-          useValue: mockReservationService,
+          useValue: mockService,
         },
       ],
     }).compile();
 
     resolver = module.get<ReservationResolver>(ReservationResolver);
-    service = module.get<ReservationService>(ReservationService);
-
-    // Reset all mocks before each test
-    jest.clearAllMocks();
+    service = module.get(ReservationService);
   });
 
   it('should be defined', () => {
@@ -41,30 +82,51 @@ describe('ReservationResolver', () => {
   });
 
   describe('getReservations', () => {
-    it('should call service.getReservations with the provided arguments', async () => {
+    const mockCall = async () => {
       const filter = { date: '2025-05-01' };
       const pagination = { page: 1, limit: 10 };
-      const sort = { sortBy: 'date' as 'date', order: 'ASC' as 'ASC' };
+      const sort = { sortBy: 'date' as const, order: 'ASC' as const };
+
+      const mockCustomer: Customer = {
+        id: 1,
+        name: 'John Doe',
+        reservations: [],
+      };
+
+      const mockReservation: Reservation = {
+        id: 1,
+        date: '2025-05-01',
+        time: '18:00',
+        guests: 4,
+        customer: mockCustomer,
+      };
+
       const expectedResult = {
-        items: [{ id: 1, date: '2025-05-01', time: '18:00', guests: 4 }],
+        items: [mockReservation],
         listInfo: { totalItems: 1 },
       };
 
-      mockReservationService.getReservations.mockResolvedValue(expectedResult);
-
+      service.getReservations.mockResolvedValue(expectedResult);
       const result = await resolver.getReservations(filter, pagination, sort);
 
-      expect(service.getReservations).toHaveBeenCalledWith(
-        filter,
-        pagination,
-        sort,
-      );
-      expect(result).toEqual(expectedResult);
+      return { filter, pagination, sort, expectedResult, result };
+    };
+
+    it('should call service with correct parameters', async () => {
+      const { filter, pagination, sort, result, expectedResult } =
+        await mockCall();
+
+      // Verify the mock was called with correct parameters
+      expect(service.getReservations.mock.calls.length).toBe(1);
+      expect(service.getReservations.mock.calls[0][0]).toBe(filter);
+      expect(service.getReservations.mock.calls[0][1]).toBe(pagination);
+      expect(service.getReservations.mock.calls[0][2]).toBe(sort);
+      expect(result).toStrictEqual(expectedResult);
     });
   });
 
   describe('checkAvailability', () => {
-    it('should call service.checkAvailability with the provided data', async () => {
+    const mockCall = async () => {
       const input: CheckAvailabilityInput = {
         date: '2025-05-01',
         time: '18:00',
@@ -75,80 +137,120 @@ describe('ReservationResolver', () => {
         availableSlots: ['18:00'],
       };
 
-      mockReservationService.checkAvailability.mockResolvedValue(
-        expectedResult,
-      );
-
+      service.checkAvailability.mockResolvedValue(expectedResult);
       const result = await resolver.checkAvailability(input);
 
-      expect(service.checkAvailability).toHaveBeenCalledWith(input);
-      expect(result).toEqual(expectedResult);
+      return { input, expectedResult, result };
+    };
+
+    it('should call service with correct parameters', async () => {
+      const { input, result, expectedResult } = await mockCall();
+
+      // Verify the mock was called with correct parameters
+      expect(service.checkAvailability.mock.calls.length).toBe(1);
+      expect(service.checkAvailability.mock.calls[0][0]).toBe(input);
+      expect(result).toStrictEqual(expectedResult);
     });
   });
 
   describe('createReservation', () => {
-    it('should call service.createReservation with the provided data', async () => {
+    const mockCall = async () => {
       const input: CreateReservationInput = {
         customerName: 'John Doe',
         date: '2025-05-01',
         time: '18:00',
         guests: 4,
       };
+
+      const mockCustomer: Customer = {
+        id: 1,
+        name: 'John Doe',
+        reservations: [],
+      };
+
+      const mockReservation: Reservation = {
+        id: 1,
+        date: '2025-05-01',
+        time: '18:00',
+        guests: 4,
+        customer: mockCustomer,
+      };
+
       const expectedResult = {
         message: 'Reservation successfully created!',
         availableSlots: [],
-        reservation: {
-          id: 1,
-          ...input,
-          customer: { id: 1, name: 'John Doe' },
-        },
+        reservation: mockReservation,
       };
 
-      mockReservationService.createReservation.mockResolvedValue(
-        expectedResult,
-      );
-
+      service.createReservation.mockResolvedValue(expectedResult);
       const result = await resolver.createReservation(input);
 
-      expect(service.createReservation).toHaveBeenCalledWith(input);
-      expect(result).toEqual(expectedResult);
+      return { input, expectedResult, result };
+    };
+
+    it('should call service with correct parameters', async () => {
+      const { input, result, expectedResult } = await mockCall();
+
+      // Verify the mock was called with correct parameters
+      expect(service.createReservation.mock.calls.length).toBe(1);
+      expect(service.createReservation.mock.calls[0][0]).toBe(input);
+      expect(result).toStrictEqual(expectedResult);
     });
   });
 
   describe('cancelReservation', () => {
-    it('should call service.cancelReservation with the provided id', async () => {
+    const mockCall = async () => {
       const id = 1;
-      mockReservationService.cancelReservation.mockResolvedValue(true);
-
+      service.cancelReservation.mockResolvedValue(true);
       const result = await resolver.cancelReservation(id);
 
-      expect(service.cancelReservation).toHaveBeenCalledWith(id);
+      return { id, result };
+    };
+
+    it('should call service with correct parameters', async () => {
+      const { id, result } = await mockCall();
+
+      // Verify the mock was called with correct parameters
+      expect(service.cancelReservation.mock.calls.length).toBe(1);
+      expect(service.cancelReservation.mock.calls[0][0]).toBe(id);
       expect(result).toBe(true);
     });
   });
 
   describe('updateReservation', () => {
-    it('should call service.updateReservation with the provided data', async () => {
+    const mockCall = async () => {
       const input: UpdateReservationInput = {
         id: 1,
         guests: 6,
       };
-      const expectedResult = {
+
+      const mockCustomer: Customer = {
+        id: 1,
+        name: 'John Doe',
+        reservations: [],
+      };
+
+      const expectedResult: Reservation = {
         id: 1,
         date: '2025-05-01',
         time: '18:00',
         guests: 6,
-        customer: { id: 1, name: 'John Doe' },
+        customer: mockCustomer,
       };
 
-      mockReservationService.updateReservation.mockResolvedValue(
-        expectedResult,
-      );
-
+      service.updateReservation.mockResolvedValue(expectedResult);
       const result = await resolver.updateReservation(input);
 
-      expect(service.updateReservation).toHaveBeenCalledWith(input);
-      expect(result).toEqual(expectedResult);
+      return { input, expectedResult, result };
+    };
+
+    it('should call service with correct parameters', async () => {
+      const { input, result, expectedResult } = await mockCall();
+
+      // Verify the mock was called with correct parameters
+      expect(service.updateReservation.mock.calls.length).toBe(1);
+      expect(service.updateReservation.mock.calls[0][0]).toBe(input);
+      expect(result).toStrictEqual(expectedResult);
     });
   });
 });

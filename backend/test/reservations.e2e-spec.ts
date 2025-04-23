@@ -6,12 +6,14 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Reservation } from '../src/reservations/reservation.entity';
 import { Customer } from '../src/customers/customer.entity';
 import { RedisService } from '../src/redis/redis.service';
+import { DataSource } from 'typeorm';
 
 describe('ReservationsModule (e2e)', () => {
   let app: INestApplication;
   let reservationRepository;
   let customerRepository;
   let redisService;
+  let dataSource: DataSource;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -19,7 +21,15 @@ describe('ReservationsModule (e2e)', () => {
     })
       .overrideProvider(getRepositoryToken(Reservation))
       .useValue({
-        find: jest.fn().mockResolvedValue([]),
+        find: jest.fn().mockResolvedValue([
+          {
+            id: 1,
+            date: '2025-05-01',
+            time: '18:00',
+            guests: 4,
+            customer: { id: 1, name: 'John Doe' },
+          },
+        ]),
         findOne: jest.fn(),
         create: jest.fn((entity) => entity),
         save: jest.fn((entity) => ({
@@ -32,14 +42,25 @@ describe('ReservationsModule (e2e)', () => {
           orderBy: jest.fn().mockReturnThis(),
           skip: jest.fn().mockReturnThis(),
           take: jest.fn().mockReturnThis(),
-          getMany: jest.fn().mockResolvedValue([]),
-          getCount: jest.fn().mockResolvedValue(0),
+          getMany: jest.fn().mockResolvedValue([
+            {
+              id: 1,
+              date: '2025-05-01',
+              time: '18:00',
+              guests: 4,
+              customer: { id: 1, name: 'John Doe' },
+            },
+          ]),
+          getCount: jest.fn().mockResolvedValue(1),
         })),
         delete: jest.fn().mockResolvedValue({ affected: 1 }),
       })
       .overrideProvider(getRepositoryToken(Customer))
       .useValue({
-        findOne: jest.fn().mockResolvedValue(null),
+        findOne: jest.fn().mockResolvedValue({
+          id: 1,
+          name: 'John Doe',
+        }),
         create: jest.fn((entity) => entity),
         save: jest.fn((entity) => ({
           id: 1,
@@ -55,33 +76,22 @@ describe('ReservationsModule (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    await app.init();
-
+    dataSource = moduleFixture.get(DataSource);
     reservationRepository = moduleFixture.get(getRepositoryToken(Reservation));
     customerRepository = moduleFixture.get(getRepositoryToken(Customer));
     redisService = moduleFixture.get(RedisService);
+    await app.init();
   });
 
   afterEach(async () => {
+    if (dataSource?.isInitialized) {
+      await dataSource.destroy();
+    }
     await app.close();
   });
 
   describe('Queries', () => {
     it('should get reservations', () => {
-      const mockReservations = [
-        {
-          id: 1,
-          date: '2025-05-01',
-          time: '18:00',
-          guests: 4,
-          customer: { id: 1, name: 'John Doe' },
-        },
-      ];
-
-      const queryBuilder = reservationRepository.createQueryBuilder();
-      queryBuilder.getMany.mockResolvedValue(mockReservations);
-      queryBuilder.getCount.mockResolvedValue(1);
-
       return request(app.getHttpServer())
         .post('/graphql')
         .send({

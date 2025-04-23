@@ -1,7 +1,7 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import { IsDateString, IsInt, Min, Matches, ValidateIf } from 'class-validator';
-import { TimeOrRange } from 'src/decorators/time-or-range.decorator';
+import { TimeOrRange } from '../../decorators/time-or-range.decorator';
 import { TimeRangeInput } from './time-range.input';
 
 @InputType()

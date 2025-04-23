@@ -46,12 +46,26 @@ type CheckAvailabilityOutput {
   availableSlots: [String!]
 }
 
+type User {
+  id: ID!
+  username: String!
+  role: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   """Get all reservations from the database"""
   getReservations(filter: ReservationFilterInput, pagination: PaginationInput, sort: SortInput): ReservationPaginationOutput!
 
   """Check if a specific time slot is available"""
   checkAvailability(data: CheckAvailabilityInput!): CheckAvailabilityOutput!
+  users: [User!]!
 }
 
 input ReservationFilterInput {
@@ -73,8 +87,8 @@ input SortInput {
 input CheckAvailabilityInput {
   date: String!
   time: String
-  guests: Int!
   timeRange: TimeRangeInput
+  guests: Int!
 }
 
 input TimeRangeInput {
@@ -94,6 +108,8 @@ type Mutation {
 
   """Update an existing reservation"""
   updateReservation(data: UpdateReservationInput!): Reservation!
+  createUser(input: CreateUserInput!): User!
+  updateUser(username: String!, input: UpdateUserInput!): User!
 }
 
 input CreateReservationInput {
@@ -123,4 +139,15 @@ input UpdateReservationInput {
   """Number of guests for the reservation"""
   guests: Float
   id: Int!
+}
+
+input CreateUserInput {
+  username: String!
+  password: String!
+  role: String
+}
+
+input UpdateUserInput {
+  password: String
+  role: String
 }

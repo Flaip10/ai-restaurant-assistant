@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { Reservation } from '../reservations/reservation.entity';
 import { Customer } from '../customers/customer.entity';
+import { User } from '../user/user.entity';
 
 config(); // Load environment variables
 
@@ -13,8 +14,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [Reservation, Customer],
+  entities: [Reservation, Customer, User],
   migrations: ['src/database/migrations/*.ts'], // Ensure migrations are loaded
-  synchronize: process.env.NODE_ENV === 'development', // Only enable in development
+  synchronize: true, // Temporarily enable synchronize
   logging: true, // Enable logs for debugging
 });

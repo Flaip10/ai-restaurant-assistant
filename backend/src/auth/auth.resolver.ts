@@ -27,7 +27,14 @@ export class AuthResolver {
   async refresh(
     @Args('input') input: RefreshTokenInput,
   ): Promise<LoginResponse | null> {
-    return this.authService.refreshSession(input.refreshToken);
+    const result = await this.authService.refreshSession(input.refreshToken);
+    if (!result) return null;
+
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.newRefreshToken,
+    };
   }
 
   @Mutation(() => Boolean)
@@ -42,7 +49,7 @@ export class AuthResolver {
   async logoutAll(
     @CurrentUser() user: Omit<User, 'password'>,
   ): Promise<boolean> {
-    await this.authService.logoutAll(user.id);
+    await this.authService.logoutAll(user.id.toString());
     return true;
   }
 }

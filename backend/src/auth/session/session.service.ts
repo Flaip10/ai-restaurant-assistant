@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import * as session from 'express-session';
+import session from 'express-session';
 import RedisStore from 'connect-redis';
 import { randomBytes } from 'crypto';
 import { User } from '../../user/user.entity';
@@ -21,7 +21,11 @@ export class SessionService {
   ) {
     // Initialize RedisStore with express-session
     const Store = RedisStore(session);
-    this.store = new Store({ client: this.redisClient as any });
+    this.store = new Store({
+      client: this.redisClient,
+      prefix: 'sess:',
+      ttl: 86400, // 1 day in seconds
+    }) as session.Store;
   }
 
   getSessionConfig(): session.SessionOptions {

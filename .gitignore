@@ -33,3 +33,6 @@ llm/llama.cpp/*.tmp
 # Ignore NestJS compiled output
 /backend/*.tsbuildinfo
 
+# Cursor files
+.cursor/rules
+.cursorignore

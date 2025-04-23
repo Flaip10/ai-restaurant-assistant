@@ -1,23 +1,23 @@
 import {
+  registerDecorator,
+  ValidationOptions,
   ValidationArguments,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
 } from 'class-validator';
-import { BadRequestException } from '@nestjs/common';
 
-@ValidatorConstraint({ name: 'TimeOrRangeValidator', async: false })
-export class TimeOrRangeValidator implements ValidatorConstraintInterface {
-  validate(value: any, _args: ValidationArguments): boolean {
-    if (!value) {
-      throw new BadRequestException(
-        'Either time or timeRange must be provided.',
-      );
-    }
-
-    return true;
-  }
-
-  defaultMessage(_args: ValidationArguments): string {
-    return 'Either time or timeRange must be provided.';
-  }
+export function IsTimeOrRange(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isTimeOrRange',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const obj = args.object as any;
+          // Either time or timeRange must be provided, but not both
+          return (obj.time && !obj.timeRange) || (!obj.time && obj.timeRange);
+        },
+      },
+    });
+  };
 }

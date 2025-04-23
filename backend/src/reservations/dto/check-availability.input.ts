@@ -9,7 +9,7 @@ import {
   ValidateNested,
   ValidateIf,
 } from 'class-validator';
-import { TimeOrRange } from 'src/decorators/time-or-range.decorator';
+import { TimeOrRange } from '../../decorators/time-or-range.decorator';
 
 @InputType()
 export class TimeRangeInput {

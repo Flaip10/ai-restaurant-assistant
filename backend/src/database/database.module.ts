@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Reservation } from 'src/reservations/reservation.entity';
-import { Customer } from 'src/customers/customer.entity';
+import { Reservation } from '../reservations/reservation.entity';
+import { Customer } from '../customers/customer.entity';
 import { AppDataSource } from './data-source'; // Import DataSource
 
 @Module({

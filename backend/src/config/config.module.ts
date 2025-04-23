@@ -18,6 +18,7 @@ import * as Joi from 'joi';
         RESERVATION_DURATION: Joi.number().default(60), // Default reservation is 1 hour
         REDIS_HOST: Joi.string().default('localhost'), // Redis host with default
         REDIS_PORT: Joi.number().default(6379), // Redis port with default
+        JWT_SECRET: Joi.string().required(),
       }),
     }),
   ],

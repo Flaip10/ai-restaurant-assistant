@@ -9,7 +9,12 @@ async function bootstrap() {
     const userService = app.get(UserService);
 
     // Create admin user
-    const admin = await userService.createUser('admin', 'password123', 'admin');
+    const admin = await userService.createUser(
+      'admin',
+      'admin@example.com',
+      'password123',
+      'admin',
+    );
     console.log('Admin user created successfully:', admin);
   } catch (error: any) {
     if (error instanceof Error) {

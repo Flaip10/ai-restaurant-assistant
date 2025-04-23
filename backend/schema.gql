@@ -24,6 +24,20 @@ type Reservation {
   customer: Customer!
 }
 
+type UserResponse {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+"""
+`Date` type as integer. Type represents date and time as number of milliseconds from start of UNIX epoch.
+"""
+scalar Timestamp
+
 type ListInfo {
   totalItems: Int!
 }
@@ -46,18 +60,10 @@ type CheckAvailabilityOutput {
   availableSlots: [String!]
 }
 
-type User {
-  id: ID!
-  username: String!
-  role: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+type LoginResponse {
+  access_token: String!
+  user: UserResponse!
 }
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 type Query {
   """Get all reservations from the database"""
@@ -65,7 +71,7 @@ type Query {
 
   """Check if a specific time slot is available"""
   checkAvailability(data: CheckAvailabilityInput!): CheckAvailabilityOutput!
-  users: [User!]!
+  users: [UserResponse!]!
 }
 
 input ReservationFilterInput {
@@ -108,8 +114,10 @@ type Mutation {
 
   """Update an existing reservation"""
   updateReservation(data: UpdateReservationInput!): Reservation!
-  createUser(input: CreateUserInput!): User!
-  updateUser(username: String!, input: UpdateUserInput!): User!
+  createUser(input: CreateUserInput!): UserResponse!
+  updateUser(username: String!, input: UpdateUserInput!): UserResponse!
+  login(input: LoginInput!): LoginResponse!
+  logout: Boolean!
 }
 
 input CreateReservationInput {
@@ -143,6 +151,7 @@ input UpdateReservationInput {
 
 input CreateUserInput {
   username: String!
+  email: String!
   password: String!
   role: String
 }
@@ -150,4 +159,9 @@ input CreateUserInput {
 input UpdateUserInput {
   password: String
   role: String
+}
+
+input LoginInput {
+  email: String! = ""
+  password: String! = ""
 }

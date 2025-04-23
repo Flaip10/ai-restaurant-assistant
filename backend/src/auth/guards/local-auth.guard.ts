@@ -16,7 +16,7 @@ export class LocalAuthGuard extends AuthGuard('local') {
 
     if (input) {
       gqlReq.body = {
-        username: input.username,
+        email: input.email,
         password: input.password,
       };
     }

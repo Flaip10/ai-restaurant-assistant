@@ -1,36 +1,38 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user.types';
+import { User, UserResponse } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from './user.inputs';
 
 @Resolver(() => User)
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
-  @Query(() => [User])
+  @Query(() => [UserResponse])
   // @UseGuards(AuthGuard) // TODO: Add auth guard
-  async users(): Promise<User[]> {
+  async users(): Promise<Omit<User, 'password'>[]> {
     const users = await this.userService.findAll();
     return users;
   }
 
-  @Mutation(() => User)
+  @Mutation(() => UserResponse)
   // @UseGuards(AuthGuard) // TODO: Add auth guard
-  async createUser(@Args('input') input: CreateUserInput): Promise<User> {
+  async createUser(
+    @Args('input') input: CreateUserInput,
+  ): Promise<Omit<User, 'password'>> {
     return this.userService.createUser(
       input.username,
+      input.email,
       input.password,
       input.role,
     );
   }
 
-  @Mutation(() => User)
+  @Mutation(() => UserResponse)
   // @UseGuards(AuthGuard) // TODO: Add auth guard
   async updateUser(
     @Args('username') username: string,
     @Args('input') input: UpdateUserInput,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'password'>> {
     return await this.userService.updateUser(username, input);
   }
 }

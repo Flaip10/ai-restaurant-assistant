@@ -14,6 +14,10 @@ export class User {
   @Field()
   username!: string;
 
+  @Column({ unique: true })
+  @Field()
+  email!: string;
+
   @Column()
   password!: string;
 
@@ -35,6 +39,27 @@ export class User {
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
+  @Field()
+  updatedAt!: Date;
+}
+
+@ObjectType()
+export class UserResponse {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  username!: string;
+
+  @Field()
+  email!: string;
+
+  @Field()
+  role!: UserRole;
+
+  @Field()
+  createdAt!: Date;
+
   @Field()
   updatedAt!: Date;
 }

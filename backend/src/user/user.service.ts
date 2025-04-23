@@ -23,6 +23,10 @@ export class UserService {
     return users.map(({ password, ...user }) => user);
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { username } });
   }
@@ -33,6 +37,7 @@ export class UserService {
 
   async createUser(
     username: string,
+    email: string,
     password: string,
     role: UserRole = 'staff',
   ): Promise<Omit<User, 'password'>> {
@@ -42,12 +47,18 @@ export class UserService {
       throw new ConflictException('Username already exists');
     }
 
+    const existingEmail = await this.findByEmail(email);
+    if (existingEmail) {
+      throw new ConflictException('Email already exists');
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
 
     // Create new user
     const user = this.userRepository.create({
       username,
+      email,
       password: hashedPassword,
       role,
     });

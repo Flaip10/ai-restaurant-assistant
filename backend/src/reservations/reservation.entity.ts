@@ -1,5 +1,5 @@
 import { ObjectType, Field } from '@nestjs/graphql';
-import { Customer } from 'src/customers/customer.entity';
+import { Customer } from '../customers/customer.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

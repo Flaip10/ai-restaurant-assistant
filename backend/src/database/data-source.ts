@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
-import { Reservation } from 'src/reservations/reservation.entity';
-import { Customer } from 'src/customers/customer.entity';
+import { Reservation } from '../reservations/reservation.entity';
+import { Customer } from '../customers/customer.entity';
 
 config(); // Load environment variables
 

@@ -17,16 +17,16 @@ import { PaginationInput } from './dto/pagination.input';
 import { SortInput } from './dto/sort.input';
 import { UpdateReservationInput } from './dto/update-reservation.input';
 
-import { convertToMinutes, convertToTime } from 'src/utils/time.utils';
+import { convertToMinutes, convertToTime } from '../utils/time.utils';
 import {
   findAvailableSlots,
   findNearestAvailableSlots,
   isSlotAvailable,
-} from 'src/utils/reservation.utils';
+} from '../utils/reservation.utils';
 import { CreateReservationOutput } from './dto/create-reservation.output';
 import { CheckAvailabilityInput } from './dto/check-availability.input';
 import { CheckAvailabilityOutput } from './dto/check-availability.output';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ReservationService {

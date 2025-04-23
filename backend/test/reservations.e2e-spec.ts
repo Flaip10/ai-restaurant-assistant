@@ -150,13 +150,7 @@ describe('ReservationsModule (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.data.checkAvailability).toBeDefined();
-          expect(res.body.data.checkAvailability.message).toContain(
-            'available',
-          );
-          expect(res.body.data.checkAvailability.availableSlots).toContain(
-            '18:00',
-          );
+          expect(res.body.data.checkAvailability).toEqual(mockAvailability);
         });
     });
   });

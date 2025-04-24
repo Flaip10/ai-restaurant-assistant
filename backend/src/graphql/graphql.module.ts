@@ -8,8 +8,11 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
       driver: ApolloDriver,
       autoSchemaFile: 'schema.gql',
       playground: process.env.NODE_ENV !== 'production',
+      context: ({ req, res }) => ({ req, res }),
+      buildSchemaOptions: {
+        dateScalarMode: 'timestamp',
+      },
     }),
   ],
-  providers: [], // Register Resolvers Here
 })
 export class GraphqlModule {}

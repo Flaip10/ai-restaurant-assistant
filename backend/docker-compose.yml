@@ -1,24 +1,58 @@
-version: '3.8'
-
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: restaurant_backend
+    restart: always
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - TOTAL_SEATS=${TOTAL_SEATS}
+      - SLOT_DURATION=${SLOT_DURATION}
+      - RESERVATION_DURATION=${RESERVATION_DURATION}
+    volumes:
+      # Mount source code for development but not node_modules
+      - ./src:/app/src
+      # Exclude problematic directories from mounting
+      - backend_node_modules:/app/node_modules
+      - backend_dist:/app/dist
+      # Mount .env file for local development
+      - ./.env:/app/.env
+
   postgres:
     image: postgres:latest
     container_name: postgres_db
     restart: always
     ports:
       - '5432:5432'
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ${DB_USER:-myuser}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-mypassword}
-      POSTGRES_DB: ${DB_NAME:-restaurant_reservations}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'pg_isready -U ${DB_USER:-myuser} -d ${DB_NAME:-restaurant_reservations}',
-        ]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,4 +76,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  backend_dist:
     driver: local

@@ -6,6 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "commonjs",
+  "packageManager": "yarn@4.9.1",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

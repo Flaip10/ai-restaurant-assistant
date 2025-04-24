@@ -36,3 +36,10 @@ llm/llama.cpp/*.tmp
 # Cursor files
 .cursor/rules
 .cursorignore
+
+# Yarn
+.yarn/
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks

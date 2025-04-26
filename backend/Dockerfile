@@ -15,14 +15,21 @@ COPY yarn.lock ./
 COPY .yarn ./.yarn
 COPY .yarnrc.yml ./
 
-# # Force node-modules linker
+# Force node-modules linker
 RUN yarn config set nodeLinker node-modules
 
 # Install dependencies
 RUN yarn install --mode=update-lockfile
 
-# Copy source code
-COPY . .
+# Copy source code and config files
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY src ./src
+
+# Create dist directory with correct permissions
+RUN mkdir -p dist && chown -R node:node /app/dist
+
+# Switch to non-root user
+USER node
 
 # Build the application
 RUN yarn build
@@ -30,5 +37,8 @@ RUN yarn build
 # Expose port
 EXPOSE 3000
 
+# Use development mode by default
+ENV NODE_ENV=development
+
 # Command to run the application
-CMD ["yarn", "start:prod"] 
+CMD ["yarn", "start:dev"] 

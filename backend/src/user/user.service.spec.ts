@@ -39,25 +39,28 @@ describe('UserService', () => {
   describe('createUser', () => {
     it('should create a new user successfully', async () => {
       const username = 'testuser';
+      const email = 'testuser@example.com';
       const password = 'password123';
       const role: UserRole = 'staff';
 
       mockRepository.findOne.mockResolvedValue(null);
       mockRepository.create.mockReturnValue({
         username,
+        email,
         password: 'hashedPassword',
         role,
       });
       mockRepository.save.mockResolvedValue({
         id: 1,
         username,
+        email,
         password: 'hashedPassword',
         role,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      const result = await service.createUser(username, password, role);
+      const result = await service.createUser(username, email, password, role);
 
       expect(result).not.toHaveProperty('password');
       expect(result).toHaveProperty('username', username);
@@ -66,11 +69,12 @@ describe('UserService', () => {
 
     it('should throw ConflictException if username exists', async () => {
       const username = 'existinguser';
-      mockRepository.findOne.mockResolvedValue({ username });
+      const email = 'existinguser@example.com';
+      mockRepository.findOne.mockResolvedValue({ username, email });
 
-      await expect(service.createUser(username, 'password')).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.createUser(username, email, 'password'),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

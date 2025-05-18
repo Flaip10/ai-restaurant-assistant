@@ -12,10 +12,14 @@ import Redis from 'ioredis';
   imports: [
     NestRedisModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService): RedisModuleOptions => ({
-        type: 'single',
-        url: configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
-      }),
+      useFactory: (configService: ConfigService): RedisModuleOptions => {
+        const host = configService.get<string>('REDIS_HOST') || 'localhost';
+        const port = configService.get<number>('REDIS_PORT') || 6379;
+        return {
+          type: 'single',
+          url: `redis://${host}:${port}`,
+        };
+      },
       inject: [ConfigService],
     }),
   ],

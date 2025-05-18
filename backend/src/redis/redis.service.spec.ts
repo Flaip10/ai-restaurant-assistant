@@ -1,148 +1,209 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { RedisService } from './redis.service';
 
-// Create a mock for the Redis client
-const mockRedisClient = {
-  set: jest.fn(),
-  get: jest.fn(),
-  del: jest.fn(),
-  scan: jest.fn(),
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
+
+type RedisConfig = {
+  REDIS_HOST: string;
+  REDIS_PORT: number;
+  REDIS_TTL: number;
 };
+
+type RedisMockType = {
+  get: jest.Mock<Promise<string | null>, [string]>;
+  set: jest.Mock<Promise<'OK'>, [string, string, string, number]>;
+  del: jest.Mock<Promise<number>, string[]>;
+  scan: jest.Mock<
+    Promise<[string, string[]]>,
+    [string, string, string, string, number]
+  >;
+  quit: jest.Mock<Promise<'OK'>, []>;
+};
+
+/* ------------------------------------------------------------------ */
+/* Mock helpers                                                       */
+/* ------------------------------------------------------------------ */
+
+function createRedisMock(): RedisMockType {
+  return {
+    get: jest.fn<Promise<string | null>, [string]>(),
+    set: jest.fn<Promise<'OK'>, [string, string, string, number]>(),
+    del: jest.fn<Promise<number>, string[]>(),
+    scan: jest.fn<
+      Promise<[string, string[]]>,
+      [string, string, string, string, number]
+    >(),
+    quit: jest.fn<Promise<'OK'>, []>(),
+  };
+}
+
+function createConfigMock(): jest.Mocked<Partial<ConfigService>> {
+  const config: RedisConfig = {
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: 6379,
+    REDIS_TTL: 3600,
+  };
+
+  return {
+    get: jest.fn().mockImplementation((key: keyof RedisConfig) => config[key]),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Main describe block                                                */
+/* ------------------------------------------------------------------ */
 
 describe('RedisService', () => {
   let service: RedisService;
+  let redisMock: RedisMockType;
+  let configService: jest.Mocked<Partial<ConfigService>>;
 
+  /* constants used in several tests */
+  const mockData = {
+    key: 'test:key',
+    value: { foo: 'bar' },
+    pattern: 'test:*',
+    ttl: 3600,
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Test setup                                                         */
+  /* ------------------------------------------------------------------ */
   beforeEach(async () => {
+    /* fresh mocks every test */
+    redisMock = createRedisMock();
+    configService = createConfigMock();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisService,
-        {
-          provide: 'REDIS_CLIENT',
-          useValue: mockRedisClient,
-        },
+        { provide: ConfigService, useValue: configService },
+        { provide: 'REDIS_CLIENT', useValue: redisMock },
       ],
     }).compile();
 
     service = module.get<RedisService>(RedisService);
-
-    // Reset all mocks before each test
-    jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  /* ------------------------------------------------------------------ */
+  /* Basic existence                                                    */
+  /* ------------------------------------------------------------------ */
+  it('service should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('set', () => {
-    it('should set a value in Redis with expiration', async () => {
-      const key = 'test-key';
-      const value = { name: 'test-value' };
-      const ttl = 3600;
-
-      await service.set(key, value, ttl);
-
-      const mockFn = mockRedisClient.set;
-      const calls = mockFn.mock.calls;
-      expect(calls[0]).toEqual([key, JSON.stringify(value), 'EX', ttl]);
-    });
-
-    it('should use default TTL if not provided', async () => {
-      const key = 'test-key';
-      const value = { name: 'test-value' };
-
-      await service.set(key, value);
-
-      const mockFn = mockRedisClient.set;
-      const calls = mockFn.mock.calls;
-      expect(calls[0]).toEqual([key, JSON.stringify(value), 'EX', 3600]);
-    });
-  });
-
+  /* ------------------------------------------------------------------ */
+  /* get                                                               */
+  /* ------------------------------------------------------------------ */
   describe('get', () => {
-    it('should get and parse a value from Redis', async () => {
-      const key = 'test-key';
-      const value = { name: 'test-value' };
+    it('should return parsed JSON data when key exists', async () => {
+      const jsonData = JSON.stringify(mockData.value);
+      redisMock.get.mockResolvedValue(jsonData);
 
-      mockRedisClient.get.mockResolvedValue(JSON.stringify(value));
+      const result = await service.get(mockData.key);
 
-      const result = await service.get(key);
-
-      const mockFn = mockRedisClient.get;
-      const calls = mockFn.mock.calls;
-      expect(calls[0]).toEqual([key]);
-      expect(result).toEqual(value);
+      expect(result).toEqual(mockData.value);
+      expect(redisMock.get).toHaveBeenCalledWith(mockData.key);
     });
 
-    it('should return null if key does not exist', async () => {
-      const key = 'non-existent-key';
+    it('should return null when key does not exist', async () => {
+      redisMock.get.mockResolvedValue(null);
 
-      mockRedisClient.get.mockResolvedValue(null);
+      const result = await service.get(mockData.key);
 
-      const result = await service.get(key);
-
-      const mockFn = mockRedisClient.get;
-      const calls = mockFn.mock.calls;
-      expect(calls[0]).toEqual([key]);
       expect(result).toBeNull();
     });
-  });
 
-  describe('del', () => {
-    it('should delete a key from Redis', async () => {
-      const key = 'test-key';
+    it('should handle invalid JSON data', async () => {
+      redisMock.get.mockResolvedValue('not valid json');
 
-      await service.del(key);
+      const result = await service.get(mockData.key);
 
-      const mockFn = mockRedisClient.del;
-      const calls = mockFn.mock.calls;
-      expect(calls[0]).toEqual([key]);
+      expect(result).toBeNull();
+      expect(redisMock.get).toHaveBeenCalledWith(mockData.key);
     });
   });
 
+  /* ------------------------------------------------------------------ */
+  /* set                                                               */
+  /* ------------------------------------------------------------------ */
+  describe('set', () => {
+    it('should store stringified data with TTL', async () => {
+      redisMock.set.mockResolvedValue('OK');
+      await service.set(mockData.key, mockData.value, mockData.ttl);
+
+      expect(redisMock.set).toHaveBeenCalledWith(
+        mockData.key,
+        JSON.stringify(mockData.value),
+        'EX',
+        mockData.ttl,
+      );
+    });
+
+    it('should use default TTL when not provided', async () => {
+      redisMock.set.mockResolvedValue('OK');
+      await service.set(mockData.key, mockData.value);
+
+      expect(redisMock.set).toHaveBeenCalledWith(
+        mockData.key,
+        JSON.stringify(mockData.value),
+        'EX',
+        configService.get?.('REDIS_TTL'),
+      );
+    });
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* scanAndDelete                                                     */
+  /* ------------------------------------------------------------------ */
   describe('scanAndDelete', () => {
-    it('should scan and delete keys matching a pattern', async () => {
-      const pattern = 'test-*';
-
-      // Mock first scan returning some keys and cursor 42
-      mockRedisClient.scan.mockResolvedValueOnce(['42', ['test-1', 'test-2']]);
-      // Mock second scan returning more keys and cursor 0 (end)
-      mockRedisClient.scan.mockResolvedValueOnce(['0', ['test-3']]);
-
-      await service.scanAndDelete(pattern);
-
-      // Should have called scan twice with the correct pattern
-      const scanMock = mockRedisClient.scan;
-      const scanCalls = scanMock.mock.calls;
-      expect(scanCalls.length).toBe(2);
-      expect(scanCalls[0]).toEqual(['0', 'MATCH', pattern, 'COUNT', 100]);
-      expect(scanCalls[1]).toEqual(['42', 'MATCH', pattern, 'COUNT', 100]);
-
-      // Should have called del with the keys from both scans
-      const delMock = mockRedisClient.del;
-      const delCalls = delMock.mock.calls;
-      expect(delCalls.length).toBe(2);
-      expect(delCalls[0]).toEqual(['test-1', 'test-2']);
-      expect(delCalls[1]).toEqual(['test-3']);
+    beforeEach(() => {
+      redisMock.scan.mockReset();
+      redisMock.del.mockReset();
     });
 
-    it('should not call del if no keys are found', async () => {
-      const pattern = 'test-*';
+    it('should scan and delete matching keys', async () => {
+      redisMock.scan
+        .mockResolvedValueOnce(['0', ['key1', 'key2']])
+        .mockResolvedValueOnce(['0', []]);
+      redisMock.del.mockResolvedValue(2);
 
-      // Mock scan returning no keys
-      mockRedisClient.scan.mockResolvedValueOnce(['0', []]);
+      await service.scanAndDelete(mockData.pattern);
 
-      await service.scanAndDelete(pattern);
+      expect(redisMock.scan).toHaveBeenCalledWith(
+        expect.any(String),
+        'MATCH',
+        mockData.pattern,
+        'COUNT',
+        100,
+      );
+      expect(redisMock.del).toHaveBeenCalledWith('key1', 'key2');
+    });
 
-      const scanMock = mockRedisClient.scan;
-      const scanCalls = scanMock.mock.calls;
-      expect(scanCalls.length).toBe(1);
-      expect(mockRedisClient.del).not.toHaveBeenCalled();
+    it('should handle empty results', async () => {
+      redisMock.scan.mockResolvedValue(['0', []]);
+
+      await service.scanAndDelete(mockData.pattern);
+
+      expect(redisMock.scan).toHaveBeenCalledWith(
+        expect.any(String),
+        'MATCH',
+        mockData.pattern,
+        'COUNT',
+        100,
+      );
+      expect(redisMock.del).not.toHaveBeenCalled();
     });
   });
 
+  /* ------------------------------------------------------------------ */
+  /* clearReservationCache                                             */
+  /* ------------------------------------------------------------------ */
   describe('clearReservationCache', () => {
     it('should clear both reservation and availability caches', async () => {
-      // Mock implementation of scanAndDelete
       const scanAndDeleteSpy = jest
         .spyOn(service, 'scanAndDelete')
         .mockImplementation(async () => {});

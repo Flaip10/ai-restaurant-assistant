@@ -17,7 +17,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   entities: [Reservation, Customer, User],
   migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
-  migrationsRun: true,
-  synchronize: false, // Disable synchronize in production
+  migrationsRun: false,
+  synchronize: true, // Disable synchronize in production
   logging: true, // Enable logs for debugging
 });

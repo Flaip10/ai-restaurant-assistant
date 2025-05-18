@@ -1,34 +1,18 @@
+# Use lightweight Node.js 22 base image (Alpine variant)
 FROM node:22.14.0-alpine
 
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Enable Corepack for Yarn 4.9.1
-RUN corepack enable
-RUN corepack prepare yarn@4.9.1 --activate
+# Enable Corepack and activate Yarn 4.9.1 for consistent package management
+RUN corepack enable && corepack prepare yarn@4.9.1 --activate
 
-# Copy package files first
-COPY package.docker.json ./package.json
-COPY yarn.lock ./
+# Copy Yarn config and lock files (but NOT source code — you're using a bind mount!)
+COPY .yarn .yarnrc.yml ./
+COPY package.json yarn.lock ./
 
-# Copy essential configuration files
-COPY .yarn ./.yarn
-COPY .yarnrc.yml ./
-
-# # Force node-modules linker
-RUN yarn config set nodeLinker node-modules
-
-# Install dependencies
-RUN yarn install --mode=update-lockfile
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN yarn build
-
-# Expose port
-EXPOSE 3000
-
-# Command to run the application
-CMD ["yarn", "start:prod"] 
+# Runtime command:
+# - install dependencies on container startup
+# - then run the app in development mode
+# This works well with bind mounts and live reload (e.g., using `yarn start:dev`)
+CMD ["sh", "-c", "yarn install && yarn start:dev"]

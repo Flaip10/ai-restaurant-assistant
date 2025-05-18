@@ -1,48 +1,27 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: . # build place directory
     container_name: restaurant_backend
-    restart: always
     ports:
-      - '3000:3000'
+      - '${NEST_PORT:-3000}:3000' # host:container
+    env_file: .env # load every key=value from the file
+    environment: # only what must change inside the container
+      DB_HOST: postgres # point Nest to the service name
+      REDIS_HOST: redis
+      NODE_ENV: development # or "production" for prod stack
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_URL=redis://redis:6379
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET}
-      - TOTAL_SEATS=${TOTAL_SEATS}
-      - SLOT_DURATION=${SLOT_DURATION}
-      - RESERVATION_DURATION=${RESERVATION_DURATION}
-    volumes:
-      # Mount source code for development but not node_modules
-      - ./src:/app/src
-      # Exclude problematic directories from mounting
-      - backend_node_modules:/app/node_modules
-      - backend_dist:/app/dist
-      # Mount .env file for local development
-      - ./.env:/app/.env
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
 
+    volumes:
+      - .:/app # mount whole repo for hot-reload
+      - backend_node_modules:/app/node_modules # keeps the node_modules in the container persistent
   postgres:
     image: postgres:latest
     container_name: postgres_db
     restart: always
     ports:
-      - '5432:5432'
+      - '${DB_PORT:-5432}:5432'
     env_file:
       - .env
     environment:
@@ -52,7 +31,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
+      test: ['CMD-SHELL', 'pg_isready -U myuser -d restaurant_reservations']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,7 +41,7 @@ services:
     container_name: redis_server
     restart: always
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
     command: ['redis-server', '--save', '60', '1', '--loglevel', 'warning']
@@ -74,10 +53,5 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
   backend_node_modules:
-    driver: local
-  backend_dist:
-    driver: local
